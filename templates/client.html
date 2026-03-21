@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THP Board</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/client.css') }}">
+</head>
+<body>
+    <div id="tournament-finished" style="display: none; text-align: center; padding: 40px; background: #2c3e50; color: white; font-size: 1.5em;">
+        <!-- <h2>Турнир завершен</h2> -->
+        <h3>До начала турнира</h3>
+        <br>
+        <div id="countdown" style="font-size: 2em; font-weight: bold;">--:--</div>
+    </div>
+    <div class="tournament-board">
+        <div class="main-display">
+            <div id="level-text">Уровень <span id="level">-</span></div>
+            <div id="timer" class="timer">00:00</div>
+            <div id="blinds" class="blinds-display">SB - | BB -</div>
+            <div id="break" class="break-text" style="display:none;">ПЕРЕРЫВ</div>
+            <div id="pause" class="pause-text" style="display:none;">ПАУЗА</div>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-box">
+                <div class="info-label">Игроков</div>
+                <div id="players" class="info-value">0</div>
+            </div>
+            <div class="info-box">
+                <div class="info-label">Фишек в игре</div>
+                <div id="chips" class="info-value">0</div>
+            </div>
+            <div class="info-box">
+                <div class="info-label">Средний стек</div>
+                <div id="avg-stack" class="info-value">0</div>
+            </div>
+        </div>
+
+        <div id="next-blinds" class="next-level">
+            <span id="next-level-label">Следующий уровень:</span> <span id="next-level-value">SB - | BB -</span>
+        </div>
+    </div>
+    
+    <script>
+        let previousValues = {};
+        let lastUpdateTime = Date.now();
+        let lastRemaining = 0;
+        let isPaused = false;
+        let isBreak = false;
+        let countdownInterval = null;
+
+        function formatBlinds(blindsStr, isBreak = false) {
+            if (blindsStr === '-') return 'SB - | BB -';
+            if (isBreak) return blindsStr; // Для перерыва возвращаем как есть
+            const [small, big] = blindsStr.split('/').map(x => x.trim());
+            return `<span class="blind-label">SB</span> ${small} | <span class="blind-label">BB</span> ${big}`;
+        }
+        
+        function formatNumber(num) {
+            return new Intl.NumberFormat('ru-RU').format(num);
+        }
+
+        function formatTime(seconds) {
+            const min = Math.floor(seconds / 60);
+            const sec = seconds % 60;
+            return `${min < 10 ? '0' : ''}${min}:${sec < 10 ? '0' : ''}${sec}`;
+        }
+
+        function startCountdown(targetTimeStr) {
+            if (!targetTimeStr) return;
+            if (countdownInterval) clearInterval(countdownInterval);
+
+            const targetTime = new Date(targetTimeStr + 'Z').getTime(); // UTC в мс
+            const countdownEl = document.getElementById('countdown');
+
+            const updateCountdown = () => {
+                const now = Date.now();
+                const diff = Math.max(0, Math.floor((targetTime - now) / 1000));
+
+                if (diff === 0) {
+                    countdownEl.textContent = '00:00:00';
+                    clearInterval(countdownInterval);
+                    setTimeout(() => location.reload(), 1000);
+                    return;
+                }
+
+                const hours = Math.floor(diff / 3600);
+                const minutes = Math.floor((diff % 3600) / 60);
+                const seconds = diff % 60;
+
+                countdownEl.textContent = 
+                    `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            };
+
+            // Первый вызов сразу
+            updateCountdown();
+
+            // Обновляем каждые 300 мс (плавно)
+            countdownInterval = setInterval(updateCountdown, 300);
+        }
+
+        function animateValue(elementId, newValue, formatter = (x) => x, useHTML = false) {  
+            const element = document.getElementById(elementId);
+            const formattedNew = formatter(newValue);
+            const formattedOld = previousValues[elementId];
+            
+            if (formattedOld !== formattedNew) {
+                element.classList.add('updating');
+                setTimeout(() => element.classList.remove('updating'), 500);
+            }
+            
+            if (useHTML) {
+                element.innerHTML = formattedNew;  // Используем innerHTML для HTML
+            } else {
+                element.innerText = formattedNew;  // Обычный innerText
+            }
+            previousValues[elementId] = formattedNew;
+        }
+        
+        
+
+        function updateTimer() {
+            const timer = document.getElementById('timer');
+            let displayTime;
+
+            if (isPaused || lastRemaining <= 0) {
+                // Пауза или конец — показываем статично
+                displayTime = lastRemaining;
+                // ending — по серверному значению
+                timer.classList.toggle('ending', lastRemaining <= 30 && !isBreak);
+            } else {
+                // Активный таймер — интерполяция
+                const now = Date.now();
+                const elapsed = Math.floor((now - lastUpdateTime) / 1000);
+                const interpolated = Math.max(0, lastRemaining - elapsed);
+                displayTime = interpolated;
+
+                // ending — по интерполированному (плавно)
+                timer.classList.toggle('ending', interpolated <= 30 && !isBreak);
+            }
+
+            timer.textContent = formatTime(displayTime);
+        }
+
+        function update() {
+            fetch('/api/state').then(res => res.json()).then(data => {
+                const finishedOverlay = document.getElementById('tournament-finished');
+                const board = document.querySelector('.tournament-board');
+                const now = new Date().getTime();
+                const nextStart = data.next_start_time ? new Date(data.next_start_time + 'Z').getTime() : 0;
+
+                if (data.finished && nextStart > now) {
+                    finishedOverlay.style.display = 'block';
+                    board.style.display = 'none';
+                    startCountdown(data.next_start_time);
+                    return;
+                } else {
+                    finishedOverlay.style.display = 'none';
+                    board.style.display = 'block';
+                    if (countdownInterval) clearInterval(countdownInterval);
+                }
+
+                // Обновляем состояние таймера
+                lastUpdateTime = Date.now();
+                lastRemaining = data.remaining;
+                isPaused = data.paused;
+                isBreak = data.is_break;
+
+                // ВСЕГДА устанавливаем таймер на значение с сервера (для паузы и синхронизации)
+                const timer = document.getElementById('timer');
+                timer.textContent = formatTime(data.remaining);  // всегда синхронизируем с сервером
+                timer.classList.toggle('ending', data.remaining <= 30 && !data.is_break);  // проверка по серверному значению
+
+                // Анимация уровня
+                animateValue('level', data.level);
+
+                // Анимация блайндов
+                document.getElementById('blinds').innerHTML = formatBlinds(data.blinds);
+                
+                // Обновление информации о следующем уровне
+                const nextLevelLabel = data.next_level === 'Перерыв' ? 'Следующий перерыв: ' : 'Следующий уровень:';
+                document.getElementById('next-level-label').textContent = nextLevelLabel;
+                document.getElementById('next-level-value').innerHTML = formatBlinds(data.next_blinds, data.next_level === 'Перерыв');
+
+                // Анимация статистики
+                animateValue('players', `${data.players} / ${data.max_players}`);
+                animateValue('chips', data.chips, formatNumber);
+                const avgDisplay = data.avg_stack_bb !== '-' 
+                    ? `${formatNumber(data.avg_stack)}<br><span class="bb-value">(${data.avg_stack_bb} BB)</span>` 
+                    : formatNumber(data.avg_stack);
+                animateValue('avg-stack', avgDisplay, (x) => x, true);
+                
+                // Управление видимостью элементов
+                document.getElementById('break').style.display = data.is_break ? 'block' : 'none';
+                document.getElementById('blinds').style.display = data.is_break ? 'none' : 'block';
+                document.getElementById('level-text').style.display = data.is_break ? 'none' : 'block';
+                document.getElementById('pause').style.display = data.paused ? 'block' : 'none';
+            });
+        }
+        
+        // Запуск обновления состояния с сервера
+        setInterval(update, 1000);
+        update();
+
+        // Запуск локального обновления таймера
+        setInterval(updateTimer, 300);
+    </script>
+</body>
+</html> 

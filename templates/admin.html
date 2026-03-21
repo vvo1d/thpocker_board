@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Админка</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+</head>
+<body>
+    <h1>Админка</h1>
+
+    <!-- Мини-борд -->
+    <div class="mini-board">
+        <div class="board-row">
+            <div class="board-cell">
+                <div class="board-label">Уровень</div>
+                <div id="mini_level" class="board-value" style="display: block;">-</div>
+                <div id="mini_break" class="board-value" style="display: none; color: orange; font-weight: bold;">ПЕРЕРЫВ</div>
+            </div>
+            <div class="board-cell">
+                <div class="board-label">Блайнды</div>
+                <div id="mini_blinds" class="board-value">-</div>
+            </div>
+            <div class="board-cell">
+                <div class="board-label">Время</div>
+                <div id="mini_timer" class="board-value">00:00</div>
+            </div>
+            <div class="board-cell">
+                <div class="board-label">Следующие блайнды</div>
+                <div id="mini_next" class="board-value">-</div>
+            </div>
+        </div>
+        <div class="board-row">
+            <div class="board-cell">
+                <div class="board-label">Игроков</div>
+                <div id="mini_players" class="board-value">-</div>
+            </div>
+            <div class="board-cell">
+                <div class="board-label">Фишек в игре</div>
+                <div id="mini_chips" class="board-value">-</div>
+            </div>
+            <div class="board-cell">
+                <div class="board-label">Средний стек</div>
+                <div id="mini_avg_stack" class="board-value">-</div>
+            </div>
+        </div>
+    </div>
+
+    
+    
+    <div class="control-panel">
+        <form method="post" class="ajax-form">
+            <input type="hidden" name="action" value="prev_level">
+            <button type="submit">⬅️ Предыдущий уровень</button>
+        </form>
+        <form method="post" class="ajax-form">
+            <input type="hidden" name="action" value="pause">
+            <button type="submit" style="min-width: 200px;" id="pauseButton">
+                {{ '▶️ Возобновить' if data.paused else '⏸️ Пауза' }}
+            </button>
+        </form>
+        <form method="post" class="ajax-form">
+            <input type="hidden" name="action" value="next_level">
+            <button type="submit">Следующий уровень ➡️</button>
+        </form>
+    </div>
+    
+    <h2>Игроки и фишки</h2>
+    <div class="settings-section">
+        <div class="setting-item">
+            <label for="players">Игроки:</label>
+            <div class="input-group">
+                <form method="post" class="ajax-form">
+                    <input type="hidden" name="action" value="set_players">
+                    <input type="number" min="0" id="players" name="players" value="{{ data.players }}">
+                </form>
+                <form method="post" class="ajax-form">
+                    <input type="hidden" name="action" value="add_player">
+                    <button type="submit">+</button>
+                </form>
+                <form method="post" class="ajax-form">
+                    <input type="hidden" name="action" value="remove_player">
+                    <button type="submit">-</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="setting-item">
+            <label for="max_players">Макс. игроков:</label>
+            <form method="post" class="ajax-form">
+                <input type="hidden" name="action" value="set_max_players">
+                <input type="number" min="0" id="max_players" name="max_players" value="{{ data.max_players }}">
+            </form>
+        </div>
+        
+        <div class="setting-item">
+            <label for="rebuys">Ребаи:</label>
+            <div class="input-group">
+                <form method="post" class="ajax-form">
+                    <input type="hidden" name="action" value="set_rebuys">
+                    <input type="number" min="0" id="rebuys" name="rebuys" value="{{ data.rebuys_count }}">
+                </form>
+                <form method="post" class="ajax-form">
+                    <input type="hidden" name="action" value="add_rebuy">
+                    <button type="submit">+</button>
+                </form>
+                <form method="post" class="ajax-form">
+                    <input type="hidden" name="action" value="remove_rebuy">
+                    <button type="submit">-</button>
+                </form>
+            </div>
+        </div>
+        <div class="setting-item">
+            <label for="addons">Аддоны:</label>
+            <div class="input-group">
+                <form method="post" class="ajax-form">
+                    <input type="hidden" name="action" value="set_addons">
+                    <input type="number" min="0" id="addons" name="addons" value="{{ data.addons_count }}">
+                </form>
+                <form method="post" class="ajax-form">
+                    <input type="hidden" name="action" value="add_addon">
+                    <button type="submit">+</button>
+                </form>
+                <form method="post" class="ajax-form">
+                    <input type="hidden" name="action" value="remove_addon">
+                    <button type="submit">-</button>
+                </form>
+            </div>
+        </div>
+        <div class="setting-item">
+            <label for="chips">Фишки в игре:</label>
+            <form method="post" class="ajax-form">
+                <input type="hidden" name="action" value="set_chips">
+                <input type="number" min="0" id="chips" name="chips" value="{{ data.chips_in_play }}" class="number-input">
+            </form>
+        </div>
+        <div class="setting-item">
+            <label for="starting_stack">Стартовый стек:</label>
+            <form method="post" class="ajax-form">
+                <input type="hidden" name="action" value="set_starting_stack">
+                <input type="number" min="0" id="starting_stack" name="starting_stack" value="{{ data.starting_stack }}">
+            </form>
+        </div>
+        <div class="setting-item">
+            <label for="rebuy_stack">Ребай стек:</label>
+            <form method="post" class="ajax-form">
+                <input type="hidden" name="action" value="set_rebuy_stack">
+                <input type="number" min="0" id="rebuy_stack" name="rebuy_stack" value="{{ data.rebuy_stack }}">
+            </form>
+        </div>
+        <div class="setting-item">
+            <label for="addon_chips">Аддон фишек:</label>
+            <form method="post" class="ajax-form">
+                <input type="hidden" name="action" value="set_addon_chips">
+                <input type="number" min="0" id="addon_chips" name="addon_chips" value="{{ data.addon_chips }}">
+            </form>
+        </div>
+    </div>
+
+    <h2>Время</h2>
+    <div class="settings-section time-settings">
+        <!-- Форма корректировки времени -->
+        <form method="post" class="ajax-form timer-adjust-form" onsubmit="return confirmTimeAdjust()">
+            <input type="hidden" name="action" value="set_remaining_time">
+            <label>Корректировка времени текущего уровня:</label>
+            <div class="time-inputs">
+                <div class="time-input-group">
+                    <input type="number" name="minutes" id="timer_minutes" min="0" max="999" placeholder="мин" autocomplete="off">
+                    <span>:</span>
+                    <input type="number" name="seconds" id="timer_seconds" min="0" max="59" placeholder="сек" autocomplete="off">
+                </div>
+                <button type="submit">Установить время</button>
+            </div>
+        </form>
+
+        <!-- Форма времени начала турнира -->
+        <div class="setting-item">
+            <form method="post" class="ajax-form start-time-form">
+                <input type="hidden" name="action" value="set_next_start">
+                <label for="next_start_time">Время начала турнира:</label>
+                <div class="time-input-group">
+                    <input type="datetime-local" id="next_start_time" name="next_start_time" value="{{ data.next_start_time.strftime('%Y-%m-%dT%H:%M') if data.next_start_time else '' }}">
+                    <button type="submit" onclick="return confirmStartTime()">Установить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <h2>Структура уровней</h2>
+    <form method="post" id="levels_form">
+        <input type="hidden" name="action" value="update_levels">
+        <table id="levels_table">
+            <tr>
+                <th>№</th>
+                <th>Время</th>
+                <th>Малый блайнд</th>
+                <th>Большой блайнд</th>
+                <th>Перерыв</th>
+                <th>Действия</th>
+            </tr>
+            {% for level in data.levels %}
+            <tr draggable="true" class="level-row">
+                <td class="row-number">{{ loop.index }}</td>
+                <td><input type="number" name="duration_{{ loop.index0 }}" value="{{ level.duration }}" required></td>
+                <td><input type="number" name="small_{{ loop.index0 }}" value="{{ level.small_blind if level.type == 'level' else '' }}" {{ 'disabled' if level.type == 'break' else '' }}></td>
+                <td><input type="number" name="big_{{ loop.index0 }}" value="{{ level.big_blind if level.type == 'level' else '' }}" {{ 'disabled' if level.type == 'break' else '' }}></td>
+                <td><input type="checkbox" name="is_break_{{ loop.index0 }}" {{ 'checked' if level.type == 'break' else '' }} onclick="toggleBreak(this, {{ loop.index0 }})"></td>
+                <td>
+                    <div class="row-actions">
+                        <span class="drag-handle" title="Перетащить">⇕</span>
+                        <button type="button" onclick="deleteRow(this)" class="delete-btn" title="Удалить уровень">✖</button>
+                    </div>
+                </td>
+                <div class="insert-indicator"></div>
+            </tr>
+            {% endfor %}
+        </table>
+        <button type="button" onclick="addRow()">Добавить строку</button>
+        <button type="submit">Сохранить уровни</button>
+    </form>
+    
+    <h2>Импорт / Экспорт структуры</h2>
+    <div class="settings-section">
+        <div class="setting-item">
+            <button type="button" id="export_levels_btn">Скачать структуру</button>
+        </div>
+        <div class="setting-item">
+            <label for="import_levels_file">Загрузить:</label>
+            <input type="file" id="import_levels_file" accept=".json" style="margin-top: 5px;">
+            <button type="button" id="import_levels_btn" style="margin-top: 5px;">Применить</button>
+            <div id="import_status" style="margin-top: 5px; font-size: 0.9em; min-height: 20px;"></div>
+        </div>
+    </div>
+
+    <form method="post" class="ajax-form" onsubmit="return confirm('Завершить турнир?');">
+        <input type="hidden" name="action" value="finish_tournament">
+        <button type="submit" style="background: #e74c3c; color: white;">Завершить турнир</button>
+    </form>
+
+    <script>
+        // Сохраняем позицию прокрутки перед отправкой формы
+        let lastScrollPosition = 0;
+
+        function saveScrollPosition() {
+            lastScrollPosition = window.scrollY;
+        }
+
+        function restoreScrollPosition() {
+            window.scrollTo(0, lastScrollPosition);
+        }
+
+        // Отправка формы через AJAX
+        async function submitFormAjax(form) {
+            try {
+                const formData = new FormData(form);
+                const response = await fetch(window.location.href, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                
+                // После успешной отправки, ждём немного для гарантии обновления на сервере
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                // Запрашиваем обновлённое состояние
+                const stateResponse = await fetch('/api/state', {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                if (stateResponse.ok) {
+                    const state = await stateResponse.json();
+                    await updateDisplayedValues(state);
+                    if (['next_level', 'skip_break', 'prev_level'].includes(
+                        form.querySelector('input[name="action"]')?.value
+                    )) {
+                        window.dispatchEvent(new CustomEvent('structure-updated'));
+                    }
+                    if (form.classList.contains('timer-adjust-form')) {
+                        document.getElementById('timer_minutes').value = '';
+                        document.getElementById('timer_seconds').value = '';
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Получение актуального состояния
+        async function updateState() {
+            try {
+                const response = await fetch('/api/state');
+                const state = await response.json();
+                updateDisplayedValues(state);
+            } catch (error) {
+                console.error('Ошибка при получении состояния:', error);
+            }
+        }
+
+        // Храним состояние фокуса для полей ввода
+        let focusedInputId = null;
+
+        // Добавляем обработчики фокуса для всех полей ввода
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('input[type="number"]').forEach(input => {
+                input.addEventListener('focus', function() {
+                    focusedInputId = this.id;
+                });
+                input.addEventListener('blur', function() {
+                    focusedInputId = null;
+                });
+            });
+        });
+
+        // Обновление отображаемых значений
+        async function updateDisplayedValues(state) {
+            try {
+                // Обновляем базовые значения форм
+                const fieldsMap = {
+                    'players': state.players,
+                    'max_players': state.max_players,
+                    'chips': state.chips,
+                    'rebuys': state.rebuys_count,
+                    'addons': state.addons_count,
+                    'starting_stack': state.starting_stack,
+                    'rebuy_stack': state.rebuy_stack,
+                    'addon_chips': state.addon_chips
+                };
+
+                // Обновляем все поля форм
+                for (const [id, value] of Object.entries(fieldsMap)) {
+                    const input = document.getElementById(id);
+                    // Обновляем значение только если поле не в фокусе
+                    if (input && value !== undefined && input.value != value && id !== focusedInputId) {
+                        input.value = value;
+                    }
+                }
+                
+                // Обновляем мини-борд
+                // Показываем/скрываем перерыв и уровень
+                const miniLevel = document.getElementById('mini_level');
+                const miniBreak = document.getElementById('mini_break');
+                const miniLevelText = state.is_break ? '-' : state.level;
+                
+                if (miniLevel && miniBreak) {
+                    if (state.is_break) {
+                        miniLevel.style.display = 'none';
+                        miniBreak.style.display = 'block';
+                    } else {
+                        miniLevel.style.display = 'block';
+                        miniBreak.style.display = 'none';
+                    }
+                }
+
+                const miniBoardMap = {
+                    'mini_level': miniLevelText,
+                    'mini_blinds': state.blinds,
+                    'mini_players': `${state.players} / ${state.max_players}`,
+                    'mini_chips': state.chips.toLocaleString(),
+                    'mini_avg_stack': `${state.avg_stack.toLocaleString()} (${state.avg_stack_bb} BB)`,
+                    'mini_next': state.next_blinds
+                };
+
+                for (const [id, value] of Object.entries(miniBoardMap)) {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.textContent = value;
+                    }
+                }
+
+                // Обновляем таймер в мини-борде
+                const minutes = Math.floor(state.remaining / 60);
+                const seconds = state.remaining % 60;
+                
+                const timerElement = document.getElementById('mini_timer');
+                if (timerElement) {
+                    timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                }
+                
+                // Обновляем поля ввода времени подсказками
+                const minutesInput = document.getElementById('timer_minutes');
+                const secondsInput = document.getElementById('timer_seconds');
+                if (minutesInput && secondsInput) {
+                    minutesInput.placeholder = minutes.toString().padStart(2, '0');
+                    secondsInput.placeholder = seconds.toString().padStart(2, '0');
+                }
+                
+                // Обновляем состояние кнопки паузы
+                const pauseButton = document.querySelector('button[id="pauseButton"]');
+                if (pauseButton) {
+                    pauseButton.textContent = state.paused ? '▶ Возобновить' : '⏸ Пауза';
+                }
+
+                // Если это перерыв и таймер не на паузе, ставим на паузу
+                const pauseForm = document.querySelector('form[action="pause"]');
+                if (state.is_break && !state.paused && pauseForm) {
+                    const formData = new FormData(pauseForm);
+                    formData.set('action', 'pause');
+                    await fetch(window.location.href, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Ошибка при обновлении значений:', error);
+            }
+        }
+
+        // Обработчик отправки формы
+        function handleFormSubmit(event) {
+            event.preventDefault();
+            submitFormAjax(event.target);
+        }
+
+        // Регулярное обновление состояния
+        function startStateUpdates() {
+            // Сразу получаем начальное состояние
+            updateState();
+            
+            // Обновляем каждую секунду
+            return setInterval(updateState, 1000);
+        }
+
+        // Инициализация обработчиков событий
+        document.addEventListener('DOMContentLoaded', function() {
+            // Запускаем регулярное обновление состояния
+            const updateInterval = startStateUpdates();
+
+            // Добавляем обработчики для всех форм с классом ajax-form
+            document.querySelectorAll('form.ajax-form').forEach(form => {
+                form.addEventListener('submit', handleFormSubmit);
+            });
+
+            // Добавляем обработчики для полей ввода
+            document.querySelectorAll('input[type="number"]').forEach(input => {
+                const form = input.closest('form.ajax-form');
+                if (form && !form.classList.contains('timer-adjust-form')) {
+                    input.addEventListener('change', function() {
+                        if (this.value >= 0) {
+                            submitFormAjax(form);
+                        }
+                    });
+                    input.addEventListener('blur', function() {
+                        if (this.value >= 0) {
+                            submitFormAjax(form);
+                        }
+                    });
+                    input.addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter' && this.value >= 0) {
+                            e.preventDefault();
+                            submitFormAjax(form);
+                        }
+                    });
+                }
+            });
+        });
+
+        // Функции подтверждения изменения времени
+        function confirmTimeAdjust() {
+            const minutesInput = document.getElementById('timer_minutes');
+            const secondsInput = document.getElementById('timer_seconds');
+            
+            const minutes = minutesInput.value.trim();
+            const seconds = secondsInput.value.trim();
+
+            // Если оба поля пустые — не отправляем
+            if (minutes === '' && seconds === '') {
+                alert('Введите минуты или секунды');
+                return false;
+            }
+
+            const min = parseInt(minutes) || 0;
+            const sec = parseInt(seconds) || 0;
+            const totalSec = min * 60 + sec;
+
+            if (totalSec === 0) {
+                return confirm('Установить 0:00? Это завершит уровень.');
+            }
+
+            return confirm(`Установить время ${min}:${sec.toString().padStart(2, '0')}?`);
+        }
+
+        function confirmStartTime() {
+            const startTime = document.getElementById('start_time').value;
+            if (!startTime) {
+                alert('Пожалуйста, выберите время начала турнира');
+                return false;
+            }
+            const formattedTime = new Date(startTime).toLocaleString('ru-RU', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            return confirm(`Установить время начала турнира на ${formattedTime}?`);
+        }
+    
+    // Функции для импорта и экспорта структуры уровней
+    function initLevelsImportExport() {
+        document.getElementById('export_levels_btn').addEventListener('click', async () => {
+            try {
+                const res = await fetch('/api/export_levels');
+                if (!res.ok) throw new Error('Ошибка сервера');
+                const levels = await res.json();
+
+                const blob = new Blob([JSON.stringify(levels, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `levels_${new Date().toISOString().slice(0,10)}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            } catch (err) {
+                alert('Ошибка экспорта: ' + err.message);
+            }
+        });
+
+        document.getElementById('import_levels_btn').addEventListener('click', async () => {
+            const fileInput = document.getElementById('import_levels_file');
+            const statusEl = document.getElementById('import_status');
+            statusEl.textContent = '';
+            statusEl.className = '';
+
+            if (!fileInput.files[0]) {
+                statusEl.textContent = 'Выберите файл';
+                return;
+            }
+
+            if (!fileInput.files[0].name.endsWith('.json')) {
+                statusEl.textContent = 'Только .json';
+                return;
+            }
+
+            try {
+                const text = await fileInput.files[0].text();
+                const levels = JSON.parse(text);
+                if (!Array.isArray(levels)) throw new Error('Неверный формат');
+
+                const res = await fetch('/api/import_levels', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(levels)
+                });
+
+                const result = await res.json();
+                if (!res.ok) throw new Error(result.error || 'Ошибка');
+
+                statusEl.textContent = `Загружено ${result.count} уровней. Обновляем...`;
+                statusEl.className = 'success';
+                setTimeout(() => location.reload(), 800);
+            } catch (err) {
+                statusEl.textContent = 'Ошибка: ' + err.message;
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', initLevelsImportExport);
+
+        // Функции для работы с таблицей уровней
+        function addRow() {
+            const table = document.getElementById('levels_table');
+            const rowCount = table.rows.length - 1; 
+            const row = table.insertRow();
+            row.classList.add('level-row');
+            row.draggable = true;
+            
+            row.innerHTML = `
+                <td class="row-number">${rowCount + 1}</td>
+                <td><input type="number" name="duration_${rowCount}" value="15" required></td>
+                <td><input type="number" name="small_${rowCount}" value="100"></td>
+                <td><input type="number" name="big_${rowCount}" value="200"></td>
+                <td><input type="checkbox" name="is_break_${rowCount}" onclick="toggleBreak(this, ${rowCount})"></td>
+                <td>
+                    <div class="row-actions">
+                        <span class="drag-handle" title="Перетащить">⇕</span>
+                        <button type="button" onclick="deleteRow(this)" class="delete-btn" title="Удалить уровень">✖</button>
+                    </div>
+                </td>
+                <div class="insert-indicator"></div>
+            `;
+
+            // Добавляем обработчики drag and drop для новой строки
+            row.addEventListener('dragstart', handleDragStart);
+            row.addEventListener('dragend', handleDragEnd);
+            row.addEventListener('dragover', handleDragOver);
+            row.addEventListener('drop', handleDrop);
+            row.addEventListener('dragenter', handleDragEnter);
+            row.addEventListener('dragleave', handleDragLeave);
+
+            updateRowNumbers();
+        }
+
+        function deleteRow(btn) {
+            const row = btn.closest('tr');
+            const levelNum = row.querySelector('.row-number').textContent;
+            if (confirm(`Вы уверены, что хотите удалить уровень ${levelNum}?`)) {
+                row.parentNode.removeChild(row);
+                updateRowNumbers();
+            }
+        }
+
+        function updateRowNumbers() {
+            const table = document.getElementById('levels_table');
+            const rows = table.querySelectorAll('tr:not(:first-child)');
+            rows.forEach((row, index) => {
+                row.querySelector('.row-number').textContent = index + 1;
+                // Обновляем имена полей
+                row.querySelectorAll('input').forEach(input => {
+                    const nameBase = input.name.replace(/\d+$/, '');
+                    input.name = nameBase + index;
+                });
+            });
+        }
+
+        // Drag and Drop функциональность
+        let draggedRow = null;
+        let touchStartY = 0;
+        let currentTouch = null;
+        let scrollStartY = 0;
+        let isTouchMove = false;
+        let lastTouchedRow = null;
+        let touchTimeout = null;
+
+        // Функция определения строки по координате Y
+        function getRowAtPosition(y) {
+            const rows = Array.from(document.querySelectorAll('.level-row'));
+            return rows.find(row => {
+                const rect = row.getBoundingClientRect();
+                return y >= rect.top && y <= rect.bottom;
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const levelsTable = document.getElementById('levels_table');
+            const levelRows = levelsTable.querySelectorAll('.level-row');
+
+            // Добавляем обработчики для десктопа и мобильных устройств
+            levelRows.forEach(row => {
+                // Desktop Drag and Drop
+                row.addEventListener('dragstart', handleDragStart);
+                row.addEventListener('dragend', handleDragEnd);
+                row.addEventListener('dragover', handleDragOver);
+                row.addEventListener('drop', handleDrop);
+                row.addEventListener('dragenter', handleDragEnter);
+                row.addEventListener('dragleave', handleDragLeave);
+
+                // Mobile Touch Events
+                row.addEventListener('touchstart', handleTouchStart, {passive: true});
+                row.addEventListener('touchmove', handleTouchMove, {passive: false});
+                row.addEventListener('touchend', handleTouchEnd);
+            });
+
+            // Добавляем обработчик отправки формы
+            const levelsForm = document.getElementById('levels_form');
+            levelsForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                if (confirm('Сохранить изменения в структуре уровней?')) {
+                    submitFormAjax(this);
+                }
+            });
+        });
+
+        function handleDragStart(e) {
+            draggedRow = this;
+            this.classList.add('dragging');
+            
+            // Создаем красивый эффект при начале перетаскивания
+            requestAnimationFrame(() => {
+                this.style.transform = 'scale(1.02)';
+                this.style.opacity = '0.8';
+            });
+
+            // Устанавливаем данные для перетаскивания
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', ''); // Необходимо для Firefox
+        }
+
+        function handleDragEnd(e) {
+            this.classList.remove('dragging');
+            this.style.transform = '';
+            this.style.opacity = '';
+            
+            const rows = document.querySelectorAll('.level-row');
+            rows.forEach(row => {
+                row.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
+            });
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            
+            if (this !== draggedRow) {
+                const rect = this.getBoundingClientRect();
+                const middleY = rect.top + rect.height / 2;
+                
+                // Определяем, куда будет вставлена строка - до или после текущей
+                if (e.clientY < middleY) {
+                    this.classList.remove('drag-over-bottom');
+                    this.classList.add('drag-over-top');
+                } else {
+                    this.classList.remove('drag-over-top');
+                    this.classList.add('drag-over-bottom');
+                }
+            }
+        }
+
+        function handleDragEnter(e) {
+            e.preventDefault();
+            if (this !== draggedRow) {
+                this.classList.add('drag-over');
+            }
+        }
+
+        function handleDragLeave(e) {
+            this.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            this.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
+            
+            if (this !== draggedRow) {
+                const rect = this.getBoundingClientRect();
+                const middleY = rect.top + rect.height / 2;
+                const insertBefore = e.clientY < middleY;
+                
+                const allRows = [...this.parentNode.children];
+                const draggedIndex = allRows.indexOf(draggedRow);
+                const droppedIndex = allRows.indexOf(this);
+                
+                // Удаляем старую строку
+                draggedRow.remove();
+                
+                // Вставляем строку в новую позицию
+                if (insertBefore) {
+                    this.parentNode.insertBefore(draggedRow, this);
+                } else {
+                    this.parentNode.insertBefore(draggedRow, this.nextSibling);
+                }
+                
+                // Добавляем анимацию приземления
+                draggedRow.classList.add('dropping');
+                draggedRow.addEventListener('animationend', () => {
+                    draggedRow.classList.remove('dropping');
+                }, { once: true });
+                
+                updateRowNumbers();
+            }
+        }
+
+        // Touch Event Handlers
+        function handleTouchStart(e) {
+            const touch = e.touches[0];
+            const row = e.target.closest('.level-row');
+            if (!row) return;
+
+            // Проверяем, что касание началось на handle
+            if (!e.target.closest('.drag-handle')) {
+                return;
+            }
+
+            // Задержка для различения между скроллом и перетаскиванием
+            touchTimeout = setTimeout(() => {
+                touchStartY = touch.clientY;
+                scrollStartY = window.scrollY;
+                currentTouch = touch;
+                draggedRow = row;
+                
+                // Визуальный фидбэк
+                row.classList.add('dragging');
+                row.style.transform = 'scale(1.02)';
+                row.style.opacity = '0.8';
+                
+                // Тактильный отклик, если доступен
+                if (window.navigator.vibrate) {
+                    window.navigator.vibrate(50);
+                }
+            }, 150);
+        }
+
+        function handleTouchMove(e) {
+            if (!draggedRow || !currentTouch) return;
+            e.preventDefault(); // Предотвращаем скролл при перетаскивании
+
+            const touch = e.touches[0];
+            const deltaY = touch.clientY - touchStartY;
+            
+            // Перемещаем строку
+            draggedRow.style.transform = `scale(1.02) translateY(${deltaY}px)`;
+            
+            // Находим строку под текущей позицией
+            const targetRow = getRowAtPosition(touch.clientY);
+            if (targetRow && targetRow !== draggedRow && targetRow !== lastTouchedRow) {
+                lastTouchedRow = targetRow;
+                
+                // Определяем, куда вставлять: до или после
+                const rect = targetRow.getBoundingClientRect();
+                const middle = rect.top + rect.height / 2;
+                
+                document.querySelectorAll('.level-row').forEach(row => {
+                    row.classList.remove('drag-over-top', 'drag-over-bottom');
+                });
+
+                if (touch.clientY < middle) {
+                    targetRow.classList.add('drag-over-top');
+                } else {
+                    targetRow.classList.add('drag-over-bottom');
+                }
+            }
+        }
+
+        function handleTouchEnd(e) {
+            clearTimeout(touchTimeout);
+            
+            if (!draggedRow) return;
+
+            const touch = currentTouch; // Используем последнее известное положение
+            const targetRow = getRowAtPosition(touch.clientY);
+            
+            if (targetRow && targetRow !== draggedRow) {
+                const rect = targetRow.getBoundingClientRect();
+                const middle = rect.top + rect.height / 2;
+                
+                // Определяем позицию вставки
+                if (touch.clientY < middle) {
+                    targetRow.parentNode.insertBefore(draggedRow, targetRow);
+                } else {
+                    targetRow.parentNode.insertBefore(draggedRow, targetRow.nextSibling);
+                }
+                
+                // Обновляем нумерацию
+                updateRowNumbers();
+            }
+
+            // Очищаем состояние
+            draggedRow.style.transform = '';
+            draggedRow.style.opacity = '';
+            draggedRow.classList.remove('dragging');
+            draggedRow = null;
+            currentTouch = null;
+            
+            // Убираем все индикаторы
+            document.querySelectorAll('.level-row').forEach(row => {
+                row.classList.remove('drag-over-top', 'drag-over-bottom');
+            });
+
+            // Добавляем анимацию приземления
+            if (targetRow) {
+                targetRow.classList.add('dropping');
+                targetRow.addEventListener('animationend', () => {
+                    targetRow.classList.remove('dropping');
+                }, { once: true });
+            }
+        }
+
+        function toggleBreak(checkbox, index) {
+            let row = checkbox.parentNode.parentNode;
+            let small = row.querySelector(`input[name="small_${index}"]`);
+            let big = row.querySelector(`input[name="big_${index}"]`);
+            if (checkbox.checked) {
+                if (small) { small.disabled = true; small.value = ''; }
+                if (big) { big.disabled = true; big.value = ''; }
+            } else {
+                if (small) { small.disabled = false; small.value = small.value || 100; }
+                if (big) { big.disabled = false; big.value = big.value || 200; }
+            }
+        }
+
+    </script>
+</body>
+</html>

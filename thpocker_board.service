@@ -1,0 +1,13 @@
+[Unit]
+Description=THPocker Board Service
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/thpocker_board
+Environment="PATH=/var/www/thpocker_board/venv/bin"
+ExecStart=/var/www/thpocker_board/venv/bin/gunicorn -c gunicorn.conf.py app:app
+
+[Install]
+WantedBy=multi-user.target
