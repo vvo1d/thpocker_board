@@ -10,19 +10,28 @@ import sys
 
 # Настройка логирования
 
+class TLSFilter(logging.Filter):
+    def filter(self, record):
+        return 'Bad request version' not in record.getMessage() and \
+               'Bad HTTP/0.9 request' not in record.getMessage()
+
 rotating_handler = RotatingFileHandler(
     'logs/tournament.log', 
     maxBytes= 10 * 1024 * 1024,  # 10 МБ - размер, при превышении ротируется
     backupCount = 5  # Хранить до 5 старых файлов, старые удаляются автоматически
 )
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(sys.stdout),
         rotating_handler
     ]
 )
+
+tls_filter = TLSFilter()
+for handler in logging.root.handlers:
+    handler.addFilter(tls_filter)
 
 app = Flask(__name__)
 app.secret_key = 'super_secret_key'  # Change to a real secret
@@ -78,7 +87,7 @@ def save_data():
             else:
                 data['next_start_time'] = None
             json.dump(data, f)
-            logging.debug(f"Data saved successfully. Start time: {data['start_time']}")
+            logging.debug(f"Data saved. Start time: {data['start_time']}")
     except Exception as e:
         logging.error(f"Error saving data: {e}", exc_info=True)
 
@@ -144,13 +153,10 @@ def timer_thread():
             now = time.time()
             
             if not tournament_data['paused'] and tournament_data['start_time']:
-                logging.debug(f"Current time: {current_time}, Start time: {tournament_data['start_time']}")
-                
                 # Проверяем, начался ли турнир
                 if tournament_data['start_time'] <= current_time:
                     if tournament_data['remaining_time'] > 0:
                         tournament_data['remaining_time'] -= 1
-                        logging.debug(f"Time remaining: {tournament_data['remaining_time']}")
                         
                         # Если время закончилось, проверяем текущий уровень
                         if tournament_data['remaining_time'] == 0:
@@ -295,167 +301,7 @@ def admin_login():
             session['admin'] = True
             return redirect(url_for('admin'))
         return redirect(url_for('admin_login', error='1'))
-    return '''
-        <!DOCTYPE html>
-        <html lang="ru">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Вход в админ-панель</title>
-            <style>
-                * {
-                    margin: 0;
-                    padding: 0;
-                    box-sizing: border-box;
-                }
-
-                body {
-                    min-height: 100vh;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-                    font-family: 'Roboto', Arial, sans-serif;
-                    padding: 20px;
-                }
-
-                .login-container {
-                    background: rgba(255, 255, 255, 0.05);
-                    backdrop-filter: blur(10px);
-                    padding: 2rem;
-                    border-radius: 15px;
-                    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                    width: 100%;
-                    max-width: 400px;
-                    transform: translateY(0);
-                    transition: transform 0.3s ease, box-shadow 0.3s ease;
-                }
-
-                .login-container:hover {
-                    transform: translateY(-5px);
-                    box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.45);
-                }
-
-                .login-header {
-                    text-align: center;
-                    margin-bottom: 2rem;
-                    color: #4ecca3;
-                }
-
-                .login-header h1 {
-                    font-size: 1.8rem;
-                    margin-bottom: 0.5rem;
-                    text-shadow: 0 0 20px rgba(78, 204, 163, 0.5);
-                }
-
-                .login-form {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 1.5rem;
-                }
-
-                .form-group {
-                    position: relative;
-                }
-
-                .form-group input {
-                    width: 100%;
-                    padding: 1rem;
-                    background: rgba(255, 255, 255, 0.1);
-                    border: 1px solid rgba(255, 255, 255, 0.2);
-                    border-radius: 8px;
-                    color: #fff;
-                    font-size: 1rem;
-                    transition: all 0.3s ease;
-                }
-
-                .form-group input:focus {
-                    outline: none;
-                    border-color: #4ecca3;
-                    box-shadow: 0 0 15px rgba(78, 204, 163, 0.3);
-                }
-
-                .form-group input::placeholder {
-                    color: rgba(255, 255, 255, 0.5);
-                }
-
-                .submit-btn {
-                    background: linear-gradient(45deg, #4ecca3, #45b08c);
-                    color: #fff;
-                    border: none;
-                    padding: 1rem;
-                    border-radius: 8px;
-                    font-size: 1rem;
-                    cursor: pointer;
-                    transition: all 0.3s ease;
-                    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-                }
-
-                .submit-btn:hover {
-                    background: linear-gradient(45deg, #45b08c, #4ecca3);
-                    box-shadow: 0 0 20px rgba(78, 204, 163, 0.5);
-                    transform: translateY(-2px);
-                }
-
-                @keyframes shake {
-                    0%, 100% { transform: translateX(0); }
-                    25% { transform: translateX(-5px); }
-                    75% { transform: translateX(5px); }
-                }
-
-                .error .form-group input {
-                    border-color: #ff6b6b;
-                    animation: shake 0.3s ease-in-out;
-                }
-
-                @media (max-width: 480px) {
-                    .login-container {
-                        padding: 1.5rem;
-                    }
-
-                    .login-header h1 {
-                        font-size: 1.5rem;
-                    }
-
-                    .form-group input,
-                    .submit-btn {
-                        padding: 0.8rem;
-                    }
-                }
-            </style>
-        </head>
-        <body>
-            <div class="login-container">
-                <div class="login-header">
-                    <h1>Вход в админ-панель</h1>
-                </div>
-                <form method="post" class="login-form" id="loginForm">
-                    <div class="form-group">
-                        <input type="password" name="password" placeholder="Введите пароль" required autocomplete="current-password">
-                    </div>
-                    <button type="submit" class="submit-btn">Войти</button>
-                </form>
-            </div>
-            <script>
-                // Добавляем анимацию при ошибке
-                if (window.location.search.includes('error')) {
-                    document.querySelector('.login-container').classList.add('error');
-                    setTimeout(() => {
-                        document.querySelector('.login-container').classList.remove('error');
-                    }, 1000);
-                }
-
-                // Предотвращаем повторную отправку формы
-                document.getElementById('loginForm').addEventListener('submit', function(e) {
-                    const submitBtn = this.querySelector('.submit-btn');
-                    submitBtn.disabled = true;
-                    submitBtn.textContent = 'Вход...';
-                });
-            </script>
-        </body>
-        </html>
-    '''
+    return render_template('login.html')
 
 # Admin panel
 @app.route('/admin', methods=['GET', 'POST'])

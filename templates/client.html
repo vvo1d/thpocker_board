@@ -7,11 +7,9 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/client.css') }}">
 </head>
 <body>
-    <div id="tournament-finished" style="display: none; text-align: center; padding: 40px; background: #2c3e50; color: white; font-size: 1.5em;">
-        <!-- <h2>Турнир завершен</h2> -->
+    <div id="tournament-finished">
         <h3>До начала турнира</h3>
-        <br>
-        <div id="countdown" style="font-size: 2em; font-weight: bold;">--:--</div>
+        <div id="countdown">--:--:--</div>
     </div>
     <div class="tournament-board">
         <div class="main-display">
@@ -37,8 +35,26 @@
             </div>
         </div>
 
-        <div id="next-blinds" class="next-level">
-            <span id="next-level-label">Следующий уровень:</span> <span id="next-level-value">SB - | BB -</span>
+        <div class="upcoming-levels">
+            <div class="upcoming-title">Следующие уровни</div>
+            <div class="upcoming-list" id="upcoming-list">
+                <div class="upcoming-item" id="upcoming-0">
+                    <div class="upcoming-badge">+1</div>
+                    <div class="upcoming-info">
+                        <div class="upcoming-type">—</div>
+                        <div class="upcoming-blinds">—</div>
+                        <div class="upcoming-duration">—</div>
+                    </div>
+                </div>
+                <div class="upcoming-item" id="upcoming-1">
+                    <div class="upcoming-badge">+2</div>
+                    <div class="upcoming-info">
+                        <div class="upcoming-type">—</div>
+                        <div class="upcoming-blinds">—</div>
+                        <div class="upcoming-duration">—</div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     
@@ -151,13 +167,13 @@
                 const nextStart = data.next_start_time ? new Date(data.next_start_time + 'Z').getTime() : 0;
 
                 if (data.finished && nextStart > now) {
-                    finishedOverlay.style.display = 'block';
+                    finishedOverlay.style.display = 'flex';
                     board.style.display = 'none';
                     startCountdown(data.next_start_time);
                     return;
                 } else {
                     finishedOverlay.style.display = 'none';
-                    board.style.display = 'block';
+                    board.style.display = 'flex';
                     if (countdownInterval) clearInterval(countdownInterval);
                 }
 
@@ -169,8 +185,9 @@
 
                 // ВСЕГДА устанавливаем таймер на значение с сервера (для паузы и синхронизации)
                 const timer = document.getElementById('timer');
-                timer.textContent = formatTime(data.remaining);  // всегда синхронизируем с сервером
-                timer.classList.toggle('ending', data.remaining <= 30 && !data.is_break);  // проверка по серверному значению
+                timer.textContent = formatTime(data.remaining);
+                timer.classList.toggle('ending', data.remaining <= 30 && !data.is_break);
+                timer.classList.toggle('is-break', data.is_break);
 
                 // Анимация уровня
                 animateValue('level', data.level);
@@ -178,11 +195,6 @@
                 // Анимация блайндов
                 document.getElementById('blinds').innerHTML = formatBlinds(data.blinds);
                 
-                // Обновление информации о следующем уровне
-                const nextLevelLabel = data.next_level === 'Перерыв' ? 'Следующий перерыв: ' : 'Следующий уровень:';
-                document.getElementById('next-level-label').textContent = nextLevelLabel;
-                document.getElementById('next-level-value').innerHTML = formatBlinds(data.next_blinds, data.next_level === 'Перерыв');
-
                 // Анимация статистики
                 animateValue('players', `${data.players} / ${data.max_players}`);
                 animateValue('chips', data.chips, formatNumber);
@@ -199,9 +211,60 @@
             });
         }
         
+        let lastUpcomingIndex = -1;
+
+        function formatUpcomingLevel(level, offset, allLevels, levelIndex) {
+            const levelNum = allLevels.slice(0, levelIndex + 1).filter(l => l.type === 'level').length;
+            const isBreak = level.type === 'break';
+            return {
+                type: isBreak ? 'ПЕРЕРЫВ' : `Уровень ${levelNum}`,
+                blinds: isBreak ? '—' : `${level.small_blind.toLocaleString('ru-RU')} / ${level.big_blind.toLocaleString('ru-RU')}`,
+                duration: `${level.duration} мин`,
+                isBreak,
+            };
+        }
+
+        function updateUpcoming(currentIndex, levels) {
+            if (currentIndex === lastUpcomingIndex) return;
+            lastUpcomingIndex = currentIndex;
+
+            for (let offset = 0; offset < 2; offset++) {
+                const idx = currentIndex + 1 + offset;
+                const el = document.getElementById(`upcoming-${offset}`);
+                if (!el) continue;
+
+                el.classList.remove('slide-in');
+                void el.offsetWidth; // reflow для перезапуска анимации
+
+                if (idx < levels.length) {
+                    const info = formatUpcomingLevel(levels[idx], offset, levels, idx);
+                    el.querySelector('.upcoming-type').textContent = info.type;
+                    el.querySelector('.upcoming-blinds').textContent = info.blinds;
+                    el.querySelector('.upcoming-duration').textContent = info.duration;
+                    el.classList.toggle('is-break', info.isBreak);
+                } else {
+                    el.querySelector('.upcoming-type').textContent = '—';
+                    el.querySelector('.upcoming-blinds').textContent = '—';
+                    el.querySelector('.upcoming-duration').textContent = '—';
+                    el.classList.remove('is-break');
+                }
+
+                el.classList.add('slide-in');
+            }
+        }
+
+        function updateStructure() {
+            fetch('/api/structure').then(res => res.json()).then(data => {
+                updateUpcoming(data.current_index, data.levels);
+            });
+        }
+
         // Запуск обновления состояния с сервера
         setInterval(update, 1000);
         update();
+
+        setInterval(updateStructure, 3000);
+        updateStructure();
 
         // Запуск локального обновления таймера
         setInterval(updateTimer, 300);

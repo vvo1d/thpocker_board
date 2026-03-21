@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход в админ-панель</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #0a0a0a;
+            font-family: 'Roboto', Arial, sans-serif;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: #111111;
+            border: 1px solid #2a0000;
+            border-top: 2px solid #cc0000;
+            padding: 2.5rem;
+            border-radius: 2px;
+            box-shadow: 0 0 60px rgba(180, 0, 0, 0.15);
+            width: 100%;
+            max-width: 380px;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .login-header h1 {
+            font-size: 1.3rem;
+            font-weight: 400;
+            color: #888888;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.9rem 1rem;
+            background: #0d0d0d;
+            border: 1px solid #1f1f1f;
+            border-radius: 2px;
+            color: #fff;
+            font-size: 1rem;
+            transition: border-color 0.2s ease;
+            outline: none;
+        }
+
+        .form-group input:focus {
+            border-color: #cc0000;
+        }
+
+        .form-group input::placeholder {
+            color: #333333;
+        }
+
+        .error .form-group input {
+            border-color: #cc0000;
+            animation: shake 0.3s ease-in-out;
+        }
+
+        .submit-btn {
+            background: #cc0000;
+            color: #fff;
+            border: none;
+            padding: 0.9rem;
+            border-radius: 2px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: background 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .submit-btn:hover {
+            background: #aa0000;
+            box-shadow: 0 0 20px rgba(200, 0, 0, 0.3);
+        }
+
+        .submit-btn:disabled {
+            background: #3a0000;
+            color: #666;
+            cursor: not-allowed;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>Админ-панель</h1>
+        </div>
+        <form method="post" class="login-form" id="loginForm">
+            <div class="form-group">
+                <input type="password" name="password" placeholder="Пароль" required autocomplete="current-password">
+            </div>
+            <button type="submit" class="submit-btn">Войти</button>
+        </form>
+    </div>
+    <script>
+        if (window.location.search.includes('error')) {
+            document.querySelector('.login-container').classList.add('error');
+            setTimeout(() => {
+                document.querySelector('.login-container').classList.remove('error');
+            }, 1000);
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', function() {
+            const submitBtn = this.querySelector('.submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Вход...';
+        });
+    </script>
+</body>
+</html>

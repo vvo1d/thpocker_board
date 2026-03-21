@@ -1,190 +1,337 @@
-* {
+*, *::before, *::after {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
-body {
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    color: #ffffff;
+html, body {
+    height: 100vh;
+    overflow: hidden;
+    background: #0a0a0a;
+    color: #fff;
     font-family: 'Roboto', Arial, sans-serif;
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
+}
+
+/* ── Finished overlay ───────────────────────────── */
+#tournament-finished {
+    position: fixed;
+    inset: 0;
+    display: none;
+    flex-direction: column;
     align-items: center;
-    text-align: center;
-    padding: 20px;
+    justify-content: center;
+    background: #111111;
+    gap: 2vh;
 }
 
+#tournament-finished h3 {
+    color: #555;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    font-size: clamp(1rem, 3vw, 2rem);
+    font-weight: 300;
+}
+
+#countdown {
+    font-size: clamp(3rem, 10vw, 8rem);
+    font-weight: bold;
+    color: #cc0000;
+    text-shadow: 0 0 40px rgba(200, 0, 0, 0.5);
+    letter-spacing: 0.1em;
+}
+
+/* ── Board ──────────────────────────────────────── */
 .tournament-board {
-    width: 100%;
-    max-width: 1200px;
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(10px);
-    border-radius: 20px;
-    padding: 2rem;
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: #111111;
+    padding: clamp(0.6rem, 2vh, 2rem) clamp(1rem, 3vw, 4rem);
+    gap: clamp(0.4rem, 1.2vh, 1.2rem);
+    border-top: 2px solid #cc0000;
 }
 
+/* ── Main display ───────────────────────────────── */
 .main-display {
-    font-size: clamp(1.5rem, 4vw, 3rem);
-    margin-bottom: 2rem;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+#level-text {
+    color: #b1b1b1;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    font-size: clamp(0.75rem, 2vw, 1.6rem);
+    margin-bottom: 0.2em;
 }
 
 .timer {
-    font-size: clamp(4rem, 15vw, 12rem);
+    font-size: clamp(5rem, 22vh, 14rem);
     font-weight: bold;
-    color: #4ecca3;
-    text-shadow: 0 0 30px rgba(78, 204, 163, 0.5);
-    margin: 1rem 0;
+    color: #cc0000;
+    text-shadow: 0 0 40px rgba(200, 0, 0, 0.6), 0 0 80px rgba(200, 0, 0, 0.2);
+    line-height: 1;
+    letter-spacing: 0.05em;
     transition: color 0.3s ease;
 }
 
 .timer.ending {
-    color: #ff6b6b;
-    text-shadow: 0 0 30px rgba(255, 107, 107, 0.5);
+    color: #ff2222;
+    text-shadow: 0 0 40px rgba(255, 34, 34, 0.8), 0 0 80px rgba(255, 34, 34, 0.4);
+    animation: pulse-red 1s infinite;
 }
 
-.break-text, .pause-text {
-    font-size: clamp(3rem, 8vw, 7rem);
-    color: #ff6b6b;
-    text-shadow: 0 0 30px rgba(255, 107, 107, 0.5);
-    animation: pulse 2s infinite;
+.timer.is-break {
+    color: #ffffff;
+    text-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
 }
 
 .blinds-display {
-    font-size: clamp(2rem, 6vw, 5rem);
-    margin: 1.5rem 0;
-    color: #ffd93d;
-    text-shadow: 0 0 20px rgba(255, 217, 61, 0.3);
+    font-size: clamp(1.2rem, 4.5vw, 4rem);
+    margin-top: 0.3em;
+    color: #fff;
+    letter-spacing: 0.05em;
 }
 
 .blinds-display .blind-label {
-    color: rgba(255, 217, 61, 0.6);
-    font-size: 0.7em;
-    font-weight: 300;
-    text-shadow: none;
+    color: #cc0000;
+    font-size: 0.65em;
+    font-weight: 400;
+    letter-spacing: 0.1em;
 }
 
+.break-text, .pause-text {
+    font-size: clamp(2rem, 8vh, 7rem);
+    color: #cc0000;
+    text-shadow: 0 0 30px rgba(200, 0, 0, 0.6);
+    animation: pulse 2s infinite;
+    letter-spacing: 0.1em;
+    line-height: 1;
+}
+
+/* ── Info grid ──────────────────────────────────── */
 .info-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 2rem;
-    margin-top: 3rem;
+    grid-template-columns: repeat(3, 1fr);
+    gap: clamp(0.4rem, 1vw, 1rem);
+    flex-shrink: 0;
 }
 
 .info-box {
-    background: rgba(255, 255, 255, 0.1);
-    padding: 2rem;
-    border-radius: 15px;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    position: relative;
-    overflow: hidden;
-    display: flex;                  
+    background: #0d0d0d;
+    border: 1px solid #1a0000;
+    border-top: 2px solid #cc0000;
+    border-radius: 2px;
+    padding: clamp(0.4rem, 1.5vh, 1.2rem) clamp(0.5rem, 2vw, 2rem);
+    display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
-}
-
-.info-box:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 30px rgba(78, 204, 163, 0.2);
-}
-
-.info-box::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(circle at center, rgba(78, 204, 163, 0.1) 0%, transparent 70%);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.info-box:hover::after {
-    opacity: 1;
+    justify-content: center;
+    transition: box-shadow 0.3s ease;
 }
 
 .info-label {
-    font-size: clamp(1.2rem, 2.5vw, 2rem);
-    color: #6c757d;
-    margin-bottom: 1rem;
+    font-size: clamp(0.5rem, 1.1vw, 0.85rem);
+    color: #d9d9d9;
     text-transform: uppercase;
-    letter-spacing: 2px;
+    letter-spacing: 3px;
+    margin-bottom: 0.3em;
 }
 
 .info-value {
-    font-size: clamp(2rem, 5vw, 4rem);
+    font-size: clamp(1rem, 3.5vw, 3rem);
     font-weight: bold;
-    color: #4ecca3;
-    text-shadow: 0 0 20px rgba(78, 204, 163, 0.3);
+    color: #fff;
+    line-height: 1.2;
+    text-align: center;
     transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-    text-align: center;             
-    line-height: 1.2;               
 }
 
 .info-value.updating {
-    transform: scale(1.1);
-}
-
-.next-level {
-    margin-top: 2rem;
-    font-size: clamp(1rem, 2.5vw, 1.5rem);
-    color: #cbcdcf;
+    transform: scale(1.08);
 }
 
 .bb-value {
-    font-size: 0.8em;               
-    opacity: 0.8;            
-    margin-top: 0.2em;              
+    font-size: 0.75em;
+    opacity: 0.5;
 }
 
-.export-btn {
-    background: #27ae60;
-    color: white;
-    padding: 8px 16px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
+/* ── Upcoming levels ────────────────────────────── */
+.upcoming-levels {
+    flex-shrink: 0;
+    border-top: 1px solid #1a0000;
+    padding-top: clamp(0.4rem, 1vh, 0.8rem);
 }
 
-.export-btn:hover {
-    background: #219653;
+.upcoming-title {
+    font-size: clamp(0.5rem, 0.9vw, 0.7rem);
+    color: #333;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    margin-bottom: clamp(0.25rem, 0.7vh, 0.6rem);
+    text-align: center;
 }
 
-#import_status {
-    min-height: 20px;
+.upcoming-list {
+    display: flex;
+    gap: clamp(0.4rem, 1vw, 1rem);
+}
+
+.upcoming-item {
+    display: flex;
+    align-items: center;
+    gap: clamp(0.5rem, 1vw, 1rem);
+    background: #0d0d0d;
+    border: 1px solid #1a0000;
+    border-left: 3px solid #330000;
+    border-radius: 2px;
+    padding: clamp(0.35rem, 1vh, 0.7rem) clamp(0.6rem, 2vw, 1.5rem);
+    flex: 1;
+    opacity: 0;
+}
+
+.upcoming-item.is-break {
+    border-left-color: #550000;
+}
+
+.upcoming-item.slide-in {
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.upcoming-item:nth-child(2).slide-in {
+    animation-delay: 0.08s;
+}
+
+.upcoming-badge {
+    font-size: clamp(0.6rem, 1vw, 0.8rem);
+    font-weight: 700;
+    color: #cc0000;
+    letter-spacing: 1px;
+    min-width: 18px;
+}
+
+.upcoming-item:nth-child(2) .upcoming-badge {
+    color: #550000;
+}
+
+.upcoming-info {
+    text-align: left;
+}
+
+.upcoming-type {
+    font-size: clamp(0.6rem, 1.1vw, 0.8rem);
+    color: #c2c2c2;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 0.15em;
+}
+
+.upcoming-blinds {
+    font-size: clamp(1.1rem, 2.4vw, 1.8rem);
+    font-weight: 600;
+    color: #ffffff;
+    letter-spacing: 0.05em;
+}
+
+.upcoming-item.is-break .upcoming-blinds {
+    color: #c2c2c2;
+}
+
+.upcoming-duration {
+    font-size: clamp(0.6rem, 1.1vw, 0.8rem);
+    color: #c2c2c2;
+    margin-top: 0.15em;
+}
+
+/* ── Animations ─────────────────────────────────── */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+@keyframes pulse-red {
+    0%, 100% { text-shadow: 0 0 40px rgba(255, 34, 34, 0.8), 0 0 80px rgba(255, 34, 34, 0.4); }
+    50%       { text-shadow: 0 0 60px rgba(255, 34, 34, 1),   0 0 120px rgba(255, 34, 34, 0.6); }
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes numberChange {
-    0% {
-        transform: translateY(-100%);
-        opacity: 0;
-    }
-    100% {
-        transform: translateY(0);
-        opacity: 1;
-    }
+    from { transform: translateY(-100%); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
 }
 
 .new-number {
     animation: numberChange 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
-}
-
-@media (max-width: 768px) {
+/* ── Mobile ─────────────────────────────────────── */
+@media (max-width: 600px) {
     .tournament-board {
-        padding: 1rem;
+        padding: 0.75rem;
+        gap: 0.75rem;
+    }
+
+    .timer {
+        font-size: clamp(3.5rem, 18vw, 6rem);
+    }
+
+    #level-text {
+        font-size: clamp(0.75rem, 3.5vw, 1rem);
+    }
+
+    .blinds-display {
+        font-size: clamp(1.4rem, 7vw, 2.2rem);
+    }
+
+    .break-text, .pause-text {
+        font-size: clamp(2rem, 10vw, 3.5rem);
     }
 
     .info-grid {
-        grid-template-columns: 1fr;
+        gap: 0.4rem;
+    }
+
+    .info-box {
+        padding: 0.75rem 0.4rem;
+    }
+
+    .info-label {
+        font-size: 0.6rem;
+        letter-spacing: 2px;
+        margin-bottom: 0.4em;
+    }
+
+    .info-value {
+        font-size: clamp(1.3rem, 5.5vw, 2rem);
+    }
+
+    .upcoming-list {
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+
+    .upcoming-item {
+        padding: 0.6rem 0.9rem;
+    }
+
+    .upcoming-blinds {
+        font-size: clamp(1rem, 5vw, 1.4rem);
+    }
+
+    .upcoming-type {
+        font-size: 0.65rem;
+    }
+
+    .upcoming-duration {
+        font-size: 0.65rem;
     }
 }
