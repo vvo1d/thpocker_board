@@ -62,6 +62,7 @@ tournament_data = {
     'addons_count': 0,
     'finished': False,
     'next_start_time': None,
+    'auto_switch_count': 0,
 }
 
 def recalculate_chips():
@@ -122,6 +123,7 @@ def load_data():
                     'paused': False,
                     'remaining_time': 0,
                     'max_players': 0,
+                    'auto_switch_count': 0,
                 }
                 
                 for key, default_value in defaults.items():
@@ -174,6 +176,7 @@ def timer_thread():
                                 continue
                             
                             # Автоматически переходим к следующему уровню
+                            tournament_data['auto_switch_count'] += 1
                             tournament_data['current_index'] += 1
                             next_level = levels[tournament_data['current_index']]
                             tournament_data['remaining_time'] = next_level['duration'] * 60
@@ -283,6 +286,7 @@ def api_state():
         'addon_chips': tournament_data['addon_chips'],
         'finished': tournament_data['finished'],
         'next_start_time': tournament_data['next_start_time'].strftime('%Y-%m-%dT%H:%M:%S') if tournament_data['next_start_time'] else None,
+        'auto_switch_count': tournament_data['auto_switch_count'],
     }
 
     # Если запрос от XHR (AJAX), отправляем полные данные

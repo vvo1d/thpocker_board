@@ -65,6 +65,19 @@
         let isPaused = false;
         let isBreak = false;
         let countdownInterval = null;
+        let lastAutoSwitchCount = null;
+
+        const levelSound = new Audio("{{ url_for('static', filename='sounds/gong2.mp3') }}");
+        levelSound.load();
+
+        // Разблокировка аудио при первом взаимодействии пользователя
+        const unlockAudio = () => {
+            levelSound.play().then(() => { levelSound.pause(); levelSound.currentTime = 0; }).catch(() => {});
+            document.removeEventListener('click', unlockAudio);
+            document.removeEventListener('touchstart', unlockAudio);
+        };
+        document.addEventListener('click', unlockAudio);
+        document.addEventListener('touchstart', unlockAudio);
 
         function formatBlinds(blindsStr, isBreak = false) {
             if (blindsStr === '-') return 'SB - | BB -';
@@ -208,6 +221,15 @@
                 document.getElementById('blinds').style.display = data.is_break ? 'none' : 'block';
                 document.getElementById('level-text').style.display = data.is_break ? 'none' : 'block';
                 document.getElementById('pause').style.display = data.paused ? 'block' : 'none';
+
+                // Звук при автоматическом переключении уровня
+                if (lastAutoSwitchCount === null) {
+                    lastAutoSwitchCount = data.auto_switch_count;
+                } else if (data.auto_switch_count !== lastAutoSwitchCount) {
+                    lastAutoSwitchCount = data.auto_switch_count;
+                    levelSound.currentTime = 0;
+                    levelSound.play().catch(() => {});
+                }
             });
         }
         
