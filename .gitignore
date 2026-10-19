@@ -34,3 +34,8 @@ logs_backup/
 dist/
 build/
 *.egg-info/
+
+# Рабочее состояние турнира (перезаписывается сервером каждую секунду)
+tournament.json
+tournament.json.corrupted-*
+.tournament-*.tmp
