@@ -1,9 +1,11 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 import json
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import threading
 import os
+import shutil
+import tempfile
 import logging
 from logging.handlers import RotatingFileHandler
 import sys
@@ -45,6 +47,10 @@ TIMEZONE_OFFSET = 4  # UTC+4 для Саратова
 # Data file
 DATA_FILE = 'tournament.json'
 
+def utcnow():
+    """Текущее время UTC без tzinfo — в таком виде даты хранятся в tournament.json"""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
 # Tournament data
 tournament_data = {
     'start_time': None,  # datetime ISO string
@@ -78,34 +84,60 @@ def recalculate_chips():
     logging.info(f"Chips recalculated: {tournament_data['chips_in_play']}")
     save_data()
 
+save_lock = threading.Lock()
+
 def save_data():
+    # Пишем во временный файл и атомарно подменяем им tournament.json:
+    # если процесс упадёт посреди записи, старый файл останется целым
+    tmp_path = None
     try:
-        with open(DATA_FILE, 'w') as f:
-            data = tournament_data.copy()
-            if data['start_time']:
-                data['start_time'] = data['start_time'].strftime('%Y-%m-%dT%H:%M:%S')
-            else:
-                data['start_time'] = None
-            if data['next_start_time']:
-                data['next_start_time'] = data['next_start_time'].strftime('%Y-%m-%dT%H:%M:%S')
-            else:
-                data['next_start_time'] = None
-            json.dump(data, f)
-            logging.debug(f"Data saved. Start time: {data['start_time']}")
+        data = tournament_data.copy()
+        if data['start_time']:
+            data['start_time'] = data['start_time'].strftime('%Y-%m-%dT%H:%M:%S')
+        else:
+            data['start_time'] = None
+        if data['next_start_time']:
+            data['next_start_time'] = data['next_start_time'].strftime('%Y-%m-%dT%H:%M:%S')
+        else:
+            data['next_start_time'] = None
+        with save_lock:
+            fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(os.path.abspath(DATA_FILE)),
+                                            prefix='.tournament-', suffix='.tmp')
+            with os.fdopen(fd, 'w') as f:
+                json.dump(data, f)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp_path, DATA_FILE)
+            tmp_path = None
+        logging.debug(f"Data saved. Start time: {data['start_time']}")
     except Exception as e:
         logging.error(f"Error saving data: {e}", exc_info=True)
+    finally:
+        if tmp_path and os.path.exists(tmp_path):
+            os.remove(tmp_path)
+
+def backup_corrupted_file():
+    """Копирует нечитаемый tournament.json рядом, чтобы следующее сохранение не стёрло его"""
+    backup = f"{DATA_FILE}.corrupted-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+    try:
+        shutil.copy2(DATA_FILE, backup)
+        logging.error(f"Data file is corrupted, copy saved to {backup}")
+    except Exception as e:
+        logging.error(f"Cannot back up corrupted data file: {e}", exc_info=True)
 
 def load_data():
     try:
         if os.path.exists(DATA_FILE):
             with open(DATA_FILE, 'r') as f:
                 data = json.load(f)
-                if data['start_time']:
+                if data.get('start_time'):
                     try:
                         data['start_time'] = datetime.strptime(data['start_time'], '%Y-%m-%dT%H:%M:%S')
                     except ValueError:
                         logging.error("Invalid datetime format in saved data")
                         data['start_time'] = None
+                else:
+                    data['start_time'] = None
                 if 'next_start_time' in data and data['next_start_time']:
                     try:
                         data['next_start_time'] = datetime.strptime(data['next_start_time'], '%Y-%m-%dT%H:%M:%S')
@@ -120,6 +152,12 @@ def load_data():
                 
                 # Установка значений по умолчанию для отсутствующих полей
                 defaults = {
+                    'levels': [],
+                    'current_index': 0,
+                    'players': 0,
+                    'chips_in_play': 0,
+                    'starting_stack': 10000,
+                    'addon_chips': 100000,
                     'rebuys_count': 0,
                     'double_rebuys_count': 0,
                     'addons_count': 0,
@@ -135,6 +173,8 @@ def load_data():
                         data[key] = default_value
                 if 'double_rebuy_stack' not in data:
                     data['double_rebuy_stack'] = data['rebuy_stack'] * 2
+                # Индекс за пределами структуры ломал бы /api/state и таймер
+                data['current_index'] = min(max(data['current_index'], 0), max(len(data['levels']) - 1, 0))
                 
                 global tournament_data
                 tournament_data = data
@@ -148,65 +188,78 @@ def load_data():
                 logging.info(f"Data loaded successfully. Start time: {data['start_time']}")
     except Exception as e:
         logging.error(f"Error loading data: {e}", exc_info=True)
+        if os.path.exists(DATA_FILE):
+            backup_corrupted_file()
 
 load_data()
 
 # Server-side timer thread
+def finish_level():
+    """Текущий уровень закончился: переходим к следующему или останавливаемся на последнем"""
+    current_index = tournament_data['current_index']
+    levels = tournament_data['levels']
+
+    logging.info(f"Level ended: {current_index}")
+
+    # Если это был последний уровень (или структуры нет), оставляем на паузе
+    if current_index >= len(levels) - 1:
+        tournament_data['remaining_time'] = 0
+        tournament_data['paused'] = True
+        logging.info("Tournament ended")
+        return
+
+    current = levels[current_index]
+
+    # Автоматически переходим к следующему уровню
+    tournament_data['auto_switch_count'] += 1
+    tournament_data['current_index'] += 1
+    next_level = levels[tournament_data['current_index']]
+    tournament_data['remaining_time'] = next_level['duration'] * 60
+
+    logging.info(f"Moving to next level: {tournament_data['current_index']}")
+
+    # Если закончился обычный уровень и начинается перерыв,
+    # или закончился перерыв и начинается обычный уровень,
+    # ставим на паузу для подтверждения админом
+    if current['type'] != next_level['type']:
+        tournament_data['paused'] = True
+        logging.info("Paused for level type change")
+
 def timer_thread():
     logging.info("Timer thread started")
-    last_tick = time.time()
+    # monotonic не зависит от перевода системных часов (NTP, ручная правка):
+    # с time.time() скачок часов назад замораживал таймер на это время
+    last_tick = time.monotonic()
     while True:
         try:
-            current_time = datetime.now()
-            now = time.time()
-            
-            if not tournament_data['paused'] and tournament_data['start_time']:
-                # Проверяем, начался ли турнир
-                if tournament_data['start_time'] <= current_time:
-                    if tournament_data['remaining_time'] > 0:
-                        tournament_data['remaining_time'] -= 1
-                        
-                        # Если время закончилось, проверяем текущий уровень
-                        if tournament_data['remaining_time'] == 0:
-                            current_index = tournament_data['current_index']
-                            levels = tournament_data['levels']
-                            current = levels[current_index]
-                            
-                            logging.info(f"Level ended: {current_index}")
-                            
-                            # Если это был последний уровень, оставляем на паузе
-                            if current_index >= len(levels) - 1:
-                                tournament_data['paused'] = True
-                                save_data()
-                                logging.info("Tournament ended")
-                                continue
-                            
-                            # Автоматически переходим к следующему уровню
-                            tournament_data['auto_switch_count'] += 1
-                            tournament_data['current_index'] += 1
-                            next_level = levels[tournament_data['current_index']]
-                            tournament_data['remaining_time'] = next_level['duration'] * 60
-                            
-                            logging.info(f"Moving to next level: {tournament_data['current_index']}")
-                            
-                            # Если закончился обычный уровень и начинается перерыв,
-                            # или закончился перерыв и начинается обычный уровень,
-                            # ставим на паузу для подтверждения админом
-                            if (current['type'] == 'level' and next_level['type'] == 'break') or \
-                               (current['type'] == 'break' and next_level['type'] == 'level'):
-                                tournament_data['paused'] = True
-                                logging.info("Paused for level type change")
-                        save_data()
+            # start_time хранится в UTC, поэтому и сравниваем с UTC,
+            # а не с локальным временем сервера
+            if not tournament_data['paused'] and tournament_data['start_time'] \
+                    and tournament_data['start_time'] <= utcnow():
+                if tournament_data['remaining_time'] > 0:
+                    tournament_data['remaining_time'] -= 1
+                # <= 0, а не только переход 1 → 0: время могли выставить в 0:00 из админки
+                if tournament_data['remaining_time'] <= 0:
+                    finish_level()
+                save_data()
         except Exception as e:
             logging.error(f"Error in timer thread: {e}", exc_info=True)
-            
+
         # Вычисляем точное время для следующего тика
         target_time = last_tick + 1.0
-        sleep_time = max(0, target_time - time.time())
+        sleep_time = max(0, target_time - time.monotonic())
         time.sleep(sleep_time)
         last_tick = target_time
 
-threading.Thread(target=timer_thread, daemon=True).start()
+def is_reloader_parent():
+    """python app.py с debug=True: Werkzeug-reloader запускает модуль дважды —
+    в процессе-наблюдателе и в дочернем, который обслуживает запросы. Таймер
+    в наблюдателе тикал бы по своей копии состояния и каждую секунду
+    перезаписывал tournament.json, затирая действия из админки."""
+    return __name__ == '__main__' and os.environ.get('WERKZEUG_RUN_MAIN') != 'true'
+
+if not is_reloader_parent():
+    threading.Thread(target=timer_thread, daemon=True).start()
 
 # Client page
 @app.route('/')
@@ -216,13 +269,13 @@ def client():
 # API for state
 @app.route('/api/state')
 def api_state():
-    if tournament_data['finished'] and tournament_data['next_start_time'] and tournament_data['next_start_time'] < datetime.utcnow():
+    if tournament_data['finished'] and tournament_data['next_start_time'] and tournament_data['next_start_time'] < utcnow():
         tournament_data['finished'] = False
         tournament_data['next_start_time'] = None
         
         # === ЗАПУСК НОВОГО ТУРНИРА ===
         if tournament_data['levels']:
-            tournament_data['start_time'] = datetime.utcnow()
+            tournament_data['start_time'] = utcnow()
             tournament_data['current_index'] = 0
             level = tournament_data['levels'][0]
             tournament_data['remaining_time'] = level['duration'] * 60
@@ -271,6 +324,7 @@ def api_state():
         next_level = '-'
         next_blinds = '-'
         avg_stack = 0
+        avg_stack_bb = '-'
         
     response_data = {
         'level': level_num,
@@ -444,7 +498,7 @@ def admin():
             pass
         elif action == 'finish_tournament':
             if not tournament_data['finished']:
-                if tournament_data['next_start_time'] and tournament_data['next_start_time'] > datetime.utcnow():
+                if tournament_data['next_start_time'] and tournament_data['next_start_time'] > utcnow():
                     tournament_data['finished'] = True
                     save_data()
                     logging.info("Tournament finished successfully.")
@@ -467,6 +521,8 @@ def admin():
     if template_data['start_time']:
         # Конвертируем UTC время в локальное для отображения
         template_data['start_time'] = template_data['start_time'] + timedelta(hours=TIMEZONE_OFFSET)
+    if template_data['next_start_time']:
+        template_data['next_start_time'] = template_data['next_start_time'] + timedelta(hours=TIMEZONE_OFFSET)
     return render_template('admin.html', data=template_data)
 
 @app.route('/api/export_levels')
