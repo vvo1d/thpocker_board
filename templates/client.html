@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0a0a0a">
     <title>THP Board</title>
+    <link rel="stylesheet" href="{{ url_for('theme_css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/client.css') }}">
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
 </head>
 <body>
     <div id="tournament-finished">
@@ -174,6 +177,7 @@
 
         function update() {
             fetch('/api/state').then(res => res.json()).then(data => {
+                applyTheme(data.theme);
                 const finishedOverlay = document.getElementById('tournament-finished');
                 const board = document.querySelector('.tournament-board');
                 const now = new Date().getTime();

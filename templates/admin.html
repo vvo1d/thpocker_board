@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#0a0a0a">
     <title>Админка</title>
+    <link rel="stylesheet" href="{{ url_for('theme_css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
 </head>
 <body>
 <div class="admin">
@@ -243,6 +245,51 @@
         </div>
     </form>
 
+    <h2>Оформление</h2>
+    <div class="setting-item theme-panel">
+        <label>Палитра</label>
+        <div class="theme-presets">
+            {% for key, preset in theme_presets.items() %}
+            <form method="post" class="ajax-form">
+                <input type="hidden" name="action" value="set_theme">
+                <input type="hidden" name="preset" value="{{ key }}">
+                <button type="submit" class="theme-swatch{{ ' is-active' if theme.accent == preset.accent and theme.background == preset.background else '' }}"
+                        data-accent="{{ preset.accent }}" data-background="{{ preset.background }}"
+                        style="--sw-accent: {{ preset.accent }}; --sw-bg: {{ preset.background }};" title="{{ preset.name }}">
+                    <span class="swatch-preview">
+                        <span class="swatch-timer">10:45</span>
+                    </span>
+                    <span class="swatch-name">{{ preset.name }}</span>
+                </button>
+            </form>
+            {% endfor %}
+        </div>
+
+        <div class="theme-custom-row">
+        <form method="post" class="ajax-form theme-custom" id="theme_custom_form">
+            <input type="hidden" name="action" value="set_theme">
+            <label class="color-field" for="theme_accent">
+                <input type="color" name="accent" id="theme_accent" value="{{ theme.accent }}">
+                <span class="color-field-text">
+                    <span class="color-field-label">Акцент</span>
+                    <span class="color-field-hex" id="theme_accent_hex">{{ theme.accent }}</span>
+                </span>
+            </label>
+            <label class="color-field" for="theme_background">
+                <input type="color" name="background" id="theme_background" value="{{ theme.background }}">
+                <span class="color-field-text">
+                    <span class="color-field-label">Фон</span>
+                    <span class="color-field-hex" id="theme_background_hex">{{ theme.background }}</span>
+                </span>
+            </label>
+        </form>
+        <form method="post" class="ajax-form theme-reset">
+            <input type="hidden" name="action" value="reset_theme">
+            <button type="submit" class="btn btn-ghost">Сбросить</button>
+        </form>
+        </div>
+    </div>
+
     <h2>Импорт / Экспорт структуры</h2>
     <div class="settings-section io-section">
         <div class="setting-item">
@@ -355,6 +402,9 @@
         // Обновление отображаемых значений
         async function updateDisplayedValues(state) {
             try {
+                applyTheme(state.theme);
+                syncThemeControls(state.theme);
+
                 // Обновляем базовые значения форм
                 const fieldsMap = {
                     'players': state.players,
@@ -452,6 +502,24 @@
             }
         }
 
+        // Подсвечиваем выбранную палитру и обновляем пипетки (тему могли сменить с другого устройства)
+        function syncThemeControls(theme) {
+            if (!theme) return;
+            const accent = theme['--accent'];
+            const background = theme['--bg-surface'];
+            document.querySelectorAll('.theme-swatch').forEach(btn => {
+                btn.classList.toggle('is-active', btn.dataset.accent === accent && btn.dataset.background === background);
+            });
+            for (const [id, value] of [['theme_accent', accent], ['theme_background', background]]) {
+                const input = document.getElementById(id);
+                if (input && document.activeElement !== input && input.value !== value) {
+                    input.value = value;
+                }
+                const hex = document.getElementById(id + '_hex');
+                if (hex) hex.textContent = input ? input.value : value;
+            }
+        }
+
         // Обработчик отправки формы
         function handleFormSubmit(event) {
             event.preventDefault();
@@ -475,6 +543,15 @@
             // Добавляем обработчики для всех форм с классом ajax-form
             document.querySelectorAll('form.ajax-form').forEach(form => {
                 form.addEventListener('submit', handleFormSubmit);
+            });
+
+            // Пипетки цвета: подпись меняется сразу, сохранение — когда цвет выбран
+            const themeForm = document.getElementById('theme_custom_form');
+            themeForm.querySelectorAll('input[type="color"]').forEach(input => {
+                input.addEventListener('input', () => {
+                    document.getElementById(input.id + '_hex').textContent = input.value;
+                });
+                input.addEventListener('change', () => submitFormAjax(themeForm));
             });
 
             // Добавляем обработчики для полей ввода

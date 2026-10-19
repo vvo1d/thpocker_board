@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Вход в админ-панель</title>
+    <link rel="stylesheet" href="{{ url_for('theme_css') }}">
     <style>
         * {
             margin: 0;
@@ -16,18 +17,18 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #0a0a0a;
+            background: var(--bg-page);
             font-family: 'Roboto', Arial, sans-serif;
             padding: 20px;
         }
 
         .login-container {
-            background: #111111;
-            border: 1px solid #2a0000;
-            border-top: 2px solid #cc0000;
+            background: var(--bg-surface);
+            border: 1px solid var(--accent-faint);
+            border-top: 2px solid var(--accent);
             padding: 2.5rem;
             border-radius: 2px;
-            box-shadow: 0 0 60px rgba(180, 0, 0, 0.15);
+            box-shadow: 0 0 60px rgba(var(--accent-rgb), 0.15);
             width: 100%;
             max-width: 380px;
         }
@@ -40,7 +41,7 @@
         .login-header h1 {
             font-size: 1.3rem;
             font-weight: 400;
-            color: #888888;
+            color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 4px;
         }
@@ -54,31 +55,31 @@
         .form-group input {
             width: 100%;
             padding: 0.9rem 1rem;
-            background: #0d0d0d;
-            border: 1px solid #1f1f1f;
+            background: var(--bg-inset);
+            border: 1px solid var(--border);
             border-radius: 2px;
-            color: #fff;
+            color: var(--text);
             font-size: 1rem;
             transition: border-color 0.2s ease;
             outline: none;
         }
 
         .form-group input:focus {
-            border-color: #cc0000;
+            border-color: var(--accent);
         }
 
         .form-group input::placeholder {
-            color: #333333;
+            color: var(--text-dim);
         }
 
         .error .form-group input {
-            border-color: #cc0000;
+            border-color: var(--accent);
             animation: shake 0.3s ease-in-out;
         }
 
         .submit-btn {
-            background: #cc0000;
-            color: #fff;
+            background: var(--accent);
+            color: var(--on-accent);
             border: none;
             padding: 0.9rem;
             border-radius: 2px;
@@ -91,13 +92,13 @@
         }
 
         .submit-btn:hover {
-            background: #aa0000;
-            box-shadow: 0 0 20px rgba(200, 0, 0, 0.3);
+            background: var(--accent-hover);
+            box-shadow: 0 0 20px rgba(var(--accent-rgb), 0.3);
         }
 
         .submit-btn:disabled {
-            background: #3a0000;
-            color: #666;
+            background: var(--accent-dim);
+            color: var(--text-dim);
             cursor: not-allowed;
         }
 

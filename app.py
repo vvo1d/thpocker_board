@@ -1,6 +1,9 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 import json
+import re
 import time
+import colorsys
+from functools import lru_cache
 from datetime import datetime, timedelta, timezone
 import threading
 import os
@@ -71,7 +74,95 @@ tournament_data = {
     'finished': False,
     'next_start_time': None,
     'auto_switch_count': 0,
+    'theme': None,  # {'accent': '#rrggbb', 'background': '#rrggbb'}, None = DEFAULT_THEME
 }
+
+# ── Цветовая тема ─────────────────────────────────────────────────────
+# В админке выбираются два цвета — акцент и фон, остальная палитра
+# (оттенки акцента, свечение, рамки, цвет текста) выводится из них.
+THEME_PRESETS = {
+    'red':    {'name': 'Красный',    'accent': '#cc0000', 'background': '#111111'},
+    'blue':   {'name': 'Синий',      'accent': '#1e6fff', 'background': '#0e1117'},
+    'green':  {'name': 'Зелёный',    'accent': '#12b76a', 'background': '#0d1210'},
+    'gold':   {'name': 'Золото',     'accent': '#d4a017', 'background': '#12100c'},
+    'purple': {'name': 'Фиолетовый', 'accent': '#8b5cf6', 'background': '#110f17'},
+    'teal':   {'name': 'Бирюзовый',  'accent': '#14b8a6', 'background': '#0c1213'},
+    'orange': {'name': 'Оранжевый',  'accent': '#f97316', 'background': '#120f0c'},
+    'pink':   {'name': 'Розовый',    'accent': '#ec4899', 'background': '#140e12'},
+    'light':  {'name': 'Светлая',    'accent': '#cc0000', 'background': '#f2f2f2'},
+}
+DEFAULT_THEME = {'accent': THEME_PRESETS['red']['accent'], 'background': THEME_PRESETS['red']['background']}
+HEX_COLOR_RE = re.compile(r'^#[0-9a-fA-F]{6}$')
+
+def _rgb(hex_color):
+    return tuple(int(hex_color[i:i + 2], 16) for i in (1, 3, 5))
+
+def _hex(rgb):
+    return '#%02x%02x%02x' % tuple(max(0, min(255, round(c))) for c in rgb)
+
+def _mix(a, b, weight):
+    """weight — доля цвета a"""
+    return tuple(x * weight + y * (1 - weight) for x, y in zip(a, b))
+
+def _luminance(rgb):
+    def channel(c):
+        c /= 255
+        return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+    r, g, b = (channel(c) for c in rgb)
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+def _lighten(rgb, amount):
+    h, l, s = colorsys.rgb_to_hls(*(c / 255 for c in rgb))
+    l = max(0.0, min(1.0, l + amount))
+    return tuple(c * 255 for c in colorsys.hls_to_rgb(h, l, s))
+
+def _rgb_list(rgb):
+    return ', '.join(str(max(0, min(255, round(c)))) for c in rgb)
+
+def current_theme():
+    theme = tournament_data.get('theme') or {}
+    accent = theme.get('accent', '')
+    background = theme.get('background', '')
+    if HEX_COLOR_RE.match(accent) and HEX_COLOR_RE.match(background):
+        return {'accent': accent.lower(), 'background': background.lower()}
+    return dict(DEFAULT_THEME)
+
+@lru_cache(maxsize=32)
+def theme_vars(accent, background):
+    """CSS-переменные палитры для пары цветов (акцент, фон)"""
+    a, bg = _rgb(accent), _rgb(background)
+    dark = _luminance(bg) < 0.35
+    text = (255, 255, 255) if dark else (17, 17, 17)
+    page = _mix(bg, (0, 0, 0), 0.6 if dark else 0.94)
+    bright = _lighten(a, 0.12 if dark else -0.08)
+    return {
+        '--accent': _hex(a),
+        '--accent-rgb': _rgb_list(a),
+        '--accent-hover': _hex(_lighten(a, 0.06 if dark else -0.06)),
+        '--accent-bright': _hex(bright),
+        '--accent-bright-rgb': _rgb_list(bright),
+        '--accent-soft': _hex(_mix(a, page, 0.4)),
+        '--accent-dim': _hex(_mix(a, page, 0.25)),
+        '--accent-faint': _hex(_mix(a, page, 0.12)),
+        '--accent-tint': _hex(_mix(a, page, 0.06)),
+        # на ярких акцентах (золото, зелёный) тёмный текст читается лучше белого
+        '--on-accent': '#ffffff' if _luminance(a) < 0.3 else '#111111',
+        '--bg-page': _hex(page),
+        '--bg-surface': _hex(bg),
+        '--bg-inset': _hex(_mix(bg, page, 0.5)),
+        '--bg-raised': _hex(_mix(text, bg, 0.05)),
+        '--border': _hex(_mix(text, bg, 0.09)),
+        '--border-strong': _hex(_mix(text, bg, 0.18)),
+        '--text': _hex(text),
+        '--text-rgb': _rgb_list(text),
+        '--text-muted': _hex(_mix(text, bg, 0.65)),
+        '--text-dim': _hex(_mix(text, bg, 0.38)),
+        '--color-scheme': 'dark' if dark else 'light',
+    }
+
+def current_theme_vars():
+    theme = current_theme()
+    return theme_vars(theme['accent'], theme['background'])
 
 def recalculate_chips():
     """Пересчитывает chips_in_play на основе max_players, ребаев и аддонов"""
@@ -166,6 +257,7 @@ def load_data():
                     'remaining_time': 0,
                     'max_players': 0,
                     'auto_switch_count': 0,
+                    'theme': None,
                 }
                 
                 for key, default_value in defaults.items():
@@ -349,6 +441,7 @@ def api_state():
         'finished': tournament_data['finished'],
         'next_start_time': tournament_data['next_start_time'].strftime('%Y-%m-%dT%H:%M:%S') if tournament_data['next_start_time'] else None,
         'auto_switch_count': tournament_data['auto_switch_count'],
+        'theme': current_theme_vars(),
     }
 
     # Если запрос от XHR (AJAX), отправляем полные данные
@@ -475,6 +568,17 @@ def admin():
             if new_max is not None and new_max >= 0:
                 tournament_data['max_players'] = new_max
                 recalculate_chips()
+        elif action == 'set_theme':
+            preset = THEME_PRESETS.get(request.form.get('preset', ''))
+            accent = preset['accent'] if preset else request.form.get('accent', '')
+            background = preset['background'] if preset else request.form.get('background', '')
+            if HEX_COLOR_RE.match(accent) and HEX_COLOR_RE.match(background):
+                tournament_data['theme'] = {'accent': accent.lower(), 'background': background.lower()}
+                logging.info(f"Theme set: {tournament_data['theme']}")
+                save_data()
+        elif action == 'reset_theme':
+            tournament_data['theme'] = None
+            save_data()
         elif action == 'update_levels':
             levels = []
             i = 0
@@ -523,7 +627,8 @@ def admin():
         template_data['start_time'] = template_data['start_time'] + timedelta(hours=TIMEZONE_OFFSET)
     if template_data['next_start_time']:
         template_data['next_start_time'] = template_data['next_start_time'] + timedelta(hours=TIMEZONE_OFFSET)
-    return render_template('admin.html', data=template_data)
+    return render_template('admin.html', data=template_data, theme=current_theme(),
+                           theme_presets=THEME_PRESETS)
 
 @app.route('/api/export_levels')
 def export_levels():
@@ -571,6 +676,13 @@ def import_levels():
         logging.error(f"Import error: {e}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/theme.css')
+def theme_css():
+    """Текущая палитра как CSS-переменные — подключается во всех шаблонах до основных стилей"""
+    body = ':root {\n' + ''.join(f'    {k}: {v};\n' for k, v in current_theme_vars().items()) + \
+           '    color-scheme: var(--color-scheme);\n}\n'
+    return app.response_class(body, mimetype='text/css', headers={'Cache-Control': 'no-store'})
+
 @app.route('/api/structure')
 def api_structure():
     current_idx = tournament_data['current_index']
@@ -582,6 +694,7 @@ def api_structure():
         'current_index': current_idx,
         'is_break': is_break,
         'remaining': tournament_data['remaining_time'],
+        'theme': current_theme_vars(),
         'updated_at': datetime.now().isoformat()
     })
 

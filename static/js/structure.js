@@ -26,7 +26,7 @@ function renderLevels(data) {
 
     if (titleEl) {
         titleEl.textContent = isBreak ? 'ПЕРЕРЫВ' : 'Структура турнира';
-        titleEl.style.color = isBreak ? '#550000' : '#fff';
+        titleEl.style.color = isBreak ? 'var(--accent-soft)' : 'var(--text)';
     }
 
     data.levels.forEach((lvl, idx) => {
@@ -70,6 +70,7 @@ async function updateStructure(force = false) {
         const res = await fetch('/api/structure');
         if (!res.ok) return;
         const data = await res.json();
+        if (window.applyTheme) applyTheme(data.theme);
 
         const currentHash = hashLevels(data.levels || []);
         const shouldUpdate = force ||

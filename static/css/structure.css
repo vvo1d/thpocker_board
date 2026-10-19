@@ -1,8 +1,8 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-    background: #111111;
-    color: #fff;
+    background: var(--bg-surface);
+    color: var(--text);
     font-family: 'Roboto', Arial, sans-serif;
     padding: clamp(1rem, 3vw, 3rem);
     min-height: 100vh;
@@ -20,26 +20,26 @@ h1#structure-title {
     font-weight: 700;
     letter-spacing: 6px;
     text-transform: uppercase;
-    color: #fff;
-    border-bottom: 2px solid #cc0000;
+    color: var(--text);
+    border-bottom: 2px solid var(--accent);
     padding-bottom: 0.6em;
 }
 
 /* ── Table ──────────────────────────────────────── */
 .table-container {
-    background: #0d0d0d;
-    border: 1px solid #1a0000;
-    border-top: 3px solid #cc0000;
+    background: var(--bg-inset);
+    border: 1px solid var(--accent-faint);
+    border-top: 3px solid var(--accent);
     overflow-x: auto;
     max-height: 82vh;
     overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-color: #330000 transparent;
+    scrollbar-color: var(--accent-dim) transparent;
 }
 
 .table-container::-webkit-scrollbar { width: 6px; }
 .table-container::-webkit-scrollbar-track { background: transparent; }
-.table-container::-webkit-scrollbar-thumb { background: #330000; }
+.table-container::-webkit-scrollbar-thumb { background: var(--accent-dim); }
 
 table {
     width: 100%;
@@ -50,13 +50,13 @@ table {
 th {
     padding: clamp(0.6rem, 1.5vh, 1.2rem) clamp(0.8rem, 2vw, 2rem);
     text-align: center;
-    background: #0a0a0a;
-    color: #cc0000;
+    background: var(--bg-page);
+    color: var(--accent);
     text-transform: uppercase;
     font-size: 0.75em;
     letter-spacing: 3px;
     font-weight: 600;
-    border-bottom: 1px solid #1a0000;
+    border-bottom: 1px solid var(--accent-faint);
     position: sticky;
     top: 0;
     z-index: 1;
@@ -65,9 +65,9 @@ th {
 td {
     padding: clamp(0.6rem, 1.5vh, 1.2rem) clamp(0.8rem, 2vw, 2rem);
     text-align: center;
-    border-bottom: 1px solid #1a0000;
+    border-bottom: 1px solid var(--accent-faint);
     font-weight: 500;
-    color: #ccc;
+    color: var(--text-muted);
 }
 
 tr:last-child td { border-bottom: none; }
@@ -75,52 +75,52 @@ tr:last-child td { border-bottom: none; }
 /* ── Level types ────────────────────────────────── */
 .level-num {
     font-weight: 700;
-    color: #cc0000;
+    color: var(--accent);
     font-size: 1.1em;
 }
 
 .blinds {
     font-weight: 600;
-    color: #fff;
+    color: var(--text);
 }
 
 .duration {
     font-weight: 600;
-    color: #888;
+    color: var(--text-muted);
 }
 
 .break-row td {
-    color: #444;
+    color: var(--text-dim);
 }
 
 /* ── Current level ──────────────────────────────── */
 tr.current-level td,
 tr.current-break td {
-    background: #1a0000;
-    color: #fff;
+    background: var(--accent-faint);
+    color: var(--text);
 }
 
 tr.current-level .level-num {
-    color: #ff4444;
+    color: var(--accent-bright);
 }
 
 tr.current-level .duration,
 tr.current-break .duration {
-    color: #fff;
+    color: var(--text);
     font-weight: 700;
     font-size: 1.15em;
 }
 
 tr.current-level {
-    border-left: 3px solid #cc0000;
+    border-left: 3px solid var(--accent);
 }
 
 tr.current-break {
-    border-left: 3px solid #550000;
+    border-left: 3px solid var(--accent-soft);
 }
 
 tr.current-break td {
-    color: #888;
+    color: var(--text-muted);
 }
 
 /* ── Mobile ─────────────────────────────────────── */

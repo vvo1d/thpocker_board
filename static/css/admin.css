@@ -1,17 +1,14 @@
-/* ── Palette (в тон клиентского борда) ───────────── */
+/* ── Palette ─────────────────────────────────────── */
 :root {
-    --bg: #0a0a0a;
-    --surface: #111111;
-    --surface-2: #0d0d0d;
-    --border: #1f1f1f;
-    --border-red: #2a0000;
-    --red: #cc0000;
-    --red-hover: #e00000;
-    --red-dark: #550000;
-    --red-glow: rgba(200, 0, 0, 0.35);
-    --text: #ffffff;
-    --text-muted: #aaaaaa;
-    --text-dim: #666666;
+    /* Цвета приходят из /theme.css (палитра выбирается в админке) */
+    --bg: var(--bg-page);
+    --surface: var(--bg-surface);
+    --surface-2: var(--bg-inset);
+    --border-red: var(--accent-faint);
+    --red: var(--accent);
+    --red-hover: var(--accent-hover);
+    --red-dark: var(--accent-soft);
+    --red-glow: rgba(var(--accent-rgb), 0.35);
     --radius: 4px;
     --control-h: 46px;
 }
@@ -115,7 +112,7 @@ h2::after {
     border-top: 2px solid var(--red);
     border-radius: var(--radius);
     padding: clamp(1rem, 2.5vw, 1.75rem);
-    box-shadow: 0 0 60px rgba(180, 0, 0, 0.08);
+    box-shadow: 0 0 60px rgba(var(--accent-rgb), 0.08);
 }
 
 .mini-main {
@@ -147,17 +144,17 @@ h2::after {
     color: var(--red);
     letter-spacing: 0.04em;
     font-variant-numeric: tabular-nums;
-    text-shadow: 0 0 30px rgba(200, 0, 0, 0.5);
+    text-shadow: 0 0 30px rgba(var(--accent-rgb), 0.5);
 }
 
 .mini-timer.ending {
-    color: #ff2222;
+    color: var(--accent-bright);
     animation: pulse-red 1s infinite;
 }
 
 .mini-timer.is-break {
     color: var(--text);
-    text-shadow: 0 0 25px rgba(255, 255, 255, 0.15);
+    text-shadow: 0 0 25px rgba(var(--text-rgb), 0.15);
 }
 
 .mini-blinds {
@@ -187,7 +184,7 @@ h2::after {
     justify-content: space-between;
     gap: 1rem;
     background: var(--surface-2);
-    border: 1px solid #1a0000;
+    border: 1px solid var(--accent-faint);
     border-left: 2px solid var(--red);
     border-radius: 2px;
     padding: 0.7rem 1rem;
@@ -238,7 +235,7 @@ button {
 
 .btn-primary {
     background: var(--red);
-    color: #fff;
+    color: var(--on-accent);
 }
 
 .btn-primary:hover {
@@ -267,13 +264,13 @@ button {
 .btn-danger {
     background: transparent;
     border-color: var(--red-dark);
-    color: #ff4d4d;
+    color: var(--accent-bright);
 }
 
 .btn-danger:hover {
     background: var(--red);
     border-color: var(--red);
-    color: #fff;
+    color: var(--on-accent);
     box-shadow: 0 0 20px var(--red-glow);
 }
 
@@ -351,18 +348,18 @@ input[type="datetime-local"] {
 
 input[type="number"]:hover,
 input[type="datetime-local"]:hover {
-    border-color: #333;
+    border-color: var(--border-strong);
 }
 
 input[type="number"]:focus,
 input[type="datetime-local"]:focus {
     border-color: var(--red);
-    background: #120000;
-    box-shadow: 0 0 0 3px rgba(204, 0, 0, 0.18);
+    background: var(--accent-tint);
+    box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.18);
 }
 
 input::placeholder {
-    color: #444;
+    color: var(--text-dim);
 }
 
 input:disabled {
@@ -406,7 +403,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     margin: 0 !important;
     padding: 0 0.9rem;
     background: var(--surface-2);
-    border: 1px dashed #333;
+    border: 1px dashed var(--border-strong);
     border-radius: var(--radius);
     cursor: pointer;
     transition: border-color 0.2s, background 0.2s;
@@ -415,7 +412,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 .file-picker:hover,
 #import_levels_file:focus-visible + .file-picker {
     border-color: var(--red);
-    background: #120000;
+    background: var(--accent-tint);
 }
 
 .file-picker-icon {
@@ -455,7 +452,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 
 .input-group:focus-within {
     border-color: var(--red);
-    box-shadow: 0 0 0 3px rgba(204, 0, 0, 0.18);
+    box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.18);
 }
 
 .input-group form:nth-child(2) {
@@ -480,7 +477,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 .step-btn {
     width: var(--control-h);
     min-height: var(--control-h);
-    background: #161616;
+    background: var(--bg-raised);
     border: none;
     color: var(--text-muted);
     font-size: 1.4rem;
@@ -498,13 +495,13 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 }
 
 .step-btn:hover {
-    background: #1f0000;
-    color: #fff;
+    background: var(--accent-faint);
+    color: var(--text);
 }
 
 .step-btn:active {
     background: var(--red);
-    color: #fff;
+    color: var(--on-accent);
 }
 
 .inline-row {
@@ -546,8 +543,137 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     display: none;
 }
 
-#import_status.success { color: #4caf50; }
-#import_status.error   { color: #ff4d4d; }
+#import_status.success { color: #4caf50; /* успех — не зависит от темы */ }
+#import_status.error   { color: var(--accent-bright); }
+
+/* ── Theme ──────────────────────────────────────── */
+.theme-presets {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+    gap: 0.6rem;
+}
+
+.theme-swatch {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    padding: 0;
+    background: none;
+    border: none;
+    text-align: center;
+}
+
+.swatch-preview {
+    display: grid;
+    place-items: center;
+    height: 58px;
+    background: var(--sw-bg);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--sw-accent);
+    border-radius: var(--radius);
+    transition: transform 0.15s, box-shadow 0.2s;
+}
+
+.swatch-timer {
+    color: var(--sw-accent);
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
+}
+
+.swatch-name {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+}
+
+.theme-swatch:hover .swatch-preview {
+    transform: translateY(-2px);
+}
+
+.theme-swatch.is-active .swatch-preview {
+    box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--sw-accent);
+}
+
+.theme-swatch.is-active .swatch-name {
+    color: var(--text);
+    font-weight: 600;
+}
+
+.theme-custom-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border);
+}
+
+.theme-custom {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.setting-item .color-field {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0.4rem 1rem 0.4rem 0.4rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    text-transform: none;
+    letter-spacing: 0;
+    transition: border-color 0.2s;
+}
+
+.color-field:hover,
+.color-field:focus-within {
+    border-color: var(--red);
+}
+
+.color-field input[type="color"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border: 1px solid var(--border-strong);
+    border-radius: 3px;
+    background: none;
+    cursor: pointer;
+}
+
+.color-field input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+.color-field input[type="color"]::-webkit-color-swatch { border: none; border-radius: 2px; }
+.color-field input[type="color"]::-moz-color-swatch { border: none; border-radius: 2px; }
+
+.color-field-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+}
+
+.color-field-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.color-field-hex {
+    font-size: 0.95rem;
+    color: var(--text);
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
+
 
 /* ── Checkbox ───────────────────────────────────── */
 input[type="checkbox"] {
@@ -555,7 +681,7 @@ input[type="checkbox"] {
     -webkit-appearance: none;
     width: 24px;
     height: 24px;
-    border: 1px solid #333;
+    border: 1px solid var(--border-strong);
     border-radius: 3px;
     background: var(--surface-2);
     display: inline-grid;
@@ -569,7 +695,7 @@ input[type="checkbox"]::after {
     content: '';
     width: 6px;
     height: 11px;
-    border: solid #fff;
+    border: solid var(--on-accent);
     border-width: 0 2px 2px 0;
     transform: rotate(45deg) translate(-1px, -1px) scale(0);
     transition: transform 0.15s;
@@ -602,7 +728,7 @@ table {
 th {
     position: sticky;
     top: 0;
-    background: #140000;
+    background: var(--accent-faint);
     color: var(--text-muted);
     font-size: 0.72rem;
     font-weight: 500;
@@ -616,7 +742,7 @@ th {
 
 td {
     padding: 0.4rem 0.6rem;
-    border-bottom: 1px solid #181818;
+    border-bottom: 1px solid var(--border);
     vertical-align: middle;
 }
 
@@ -654,12 +780,12 @@ td input[type="number"] {
 }
 
 .level-row:hover {
-    background: #140707;
+    background: var(--accent-tint);
 }
 
 /* Перерывы выделяем */
 .level-row:has(input[type="checkbox"]:checked) {
-    background: #0c0c0c;
+    background: var(--bg-inset);
 }
 
 .level-row:has(input[type="checkbox"]:checked) .row-number {
@@ -667,7 +793,7 @@ td input[type="number"] {
 }
 
 .level-row.dragging {
-    background: #1f0000;
+    background: var(--accent-faint);
     box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6);
     position: relative;
     z-index: 2;
@@ -708,7 +834,7 @@ td input[type="number"] {
 
 .drag-handle:hover {
     color: var(--text);
-    background: #1a1a1a;
+    background: var(--bg-raised);
 }
 
 .drag-handle:active {
@@ -727,9 +853,9 @@ td input[type="number"] {
 }
 
 .delete-btn:hover {
-    color: #ff4d4d;
+    color: var(--accent-bright);
     border-color: var(--red-dark);
-    background: #1a0000;
+    background: var(--accent-faint);
 }
 
 .levels-actions {
@@ -755,17 +881,17 @@ td input[type="number"] {
 }
 
 @keyframes pulse-red {
-    0%, 100% { text-shadow: 0 0 30px rgba(255, 34, 34, 0.7); }
-    50%      { text-shadow: 0 0 50px rgba(255, 34, 34, 1); }
+    0%, 100% { text-shadow: 0 0 30px rgba(var(--accent-bright-rgb), 0.7); }
+    50%      { text-shadow: 0 0 50px rgba(var(--accent-bright-rgb), 1); }
 }
 
 @keyframes pulse-border {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(204, 0, 0, 0.5); }
-    50%      { box-shadow: 0 0 0 4px rgba(204, 0, 0, 0); }
+    0%, 100% { box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0.5); }
+    50%      { box-shadow: 0 0 0 4px rgba(var(--accent-rgb), 0); }
 }
 
 @keyframes dropIn {
-    from { background: #330000; }
+    from { background: var(--accent-dim); }
     to   { background: transparent; }
 }
 
@@ -785,7 +911,7 @@ td input[type="number"] {
         align-items: center;
         justify-content: center;
         gap: 0.3rem;
-        border-left: 1px solid #1a0000;
+        border-left: 1px solid var(--accent-faint);
         border-top: 2px solid var(--red);
         padding: 0.7rem 0.4rem;
         text-align: center;
@@ -882,6 +1008,29 @@ td input[type="number"] {
 
     .levels-actions {
         flex-direction: column-reverse;
+    }
+
+    .theme-presets {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+    }
+
+    .swatch-preview {
+        height: 48px;
+    }
+
+    .swatch-timer {
+        font-size: 1rem;
+    }
+
+    .theme-custom,
+    .theme-reset,
+    .theme-reset .btn {
+        width: 100%;
+    }
+
+    .theme-custom > .color-field {
+        flex: 1 1 calc(50% - 0.75rem);
     }
 
     .levels-actions .btn,
