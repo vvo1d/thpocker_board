@@ -111,6 +111,23 @@
             </div>
         </div>
         <div class="setting-item">
+            <label for="double_rebuys">Ребаи x2:</label>
+            <div class="input-group">
+                <form method="post" class="ajax-form">
+                    <input type="hidden" name="action" value="set_double_rebuys">
+                    <input type="number" min="0" id="double_rebuys" name="double_rebuys" value="{{ data.double_rebuys_count }}">
+                </form>
+                <form method="post" class="ajax-form">
+                    <input type="hidden" name="action" value="add_double_rebuy">
+                    <button type="submit">+</button>
+                </form>
+                <form method="post" class="ajax-form">
+                    <input type="hidden" name="action" value="remove_double_rebuy">
+                    <button type="submit">-</button>
+                </form>
+            </div>
+        </div>
+        <div class="setting-item">
             <label for="addons">Аддоны:</label>
             <div class="input-group">
                 <form method="post" class="ajax-form">
@@ -146,6 +163,13 @@
             <form method="post" class="ajax-form">
                 <input type="hidden" name="action" value="set_rebuy_stack">
                 <input type="number" min="0" id="rebuy_stack" name="rebuy_stack" value="{{ data.rebuy_stack }}">
+            </form>
+        </div>
+        <div class="setting-item">
+            <label for="double_rebuy_stack">Ребай x2 стек:</label>
+            <form method="post" class="ajax-form">
+                <input type="hidden" name="action" value="set_double_rebuy_stack">
+                <input type="number" min="0" id="double_rebuy_stack" name="double_rebuy_stack" value="{{ data.double_rebuy_stack }}">
             </form>
         </div>
         <div class="setting-item">
@@ -327,9 +351,11 @@
                     'max_players': state.max_players,
                     'chips': state.chips,
                     'rebuys': state.rebuys_count,
+                    'double_rebuys': state.double_rebuys_count,
                     'addons': state.addons_count,
                     'starting_stack': state.starting_stack,
                     'rebuy_stack': state.rebuy_stack,
+                    'double_rebuy_stack': state.double_rebuy_stack,
                     'addon_chips': state.addon_chips
                 };
 

@@ -57,8 +57,10 @@ tournament_data = {
     'chips_in_play': 0,
     'starting_stack': 10000,
     'rebuy_stack': 10000,
+    'double_rebuy_stack': 20000,
     'addon_chips': 100000,
     'rebuys_count': 0,
+    'double_rebuys_count': 0,
     'addons_count': 0,
     'finished': False,
     'next_start_time': None,
@@ -70,6 +72,7 @@ def recalculate_chips():
     tournament_data['chips_in_play'] = (
         tournament_data['max_players'] * tournament_data['starting_stack']
         + tournament_data['rebuys_count'] * tournament_data['rebuy_stack']
+        + tournament_data['double_rebuys_count'] * tournament_data['double_rebuy_stack']
         + tournament_data['addons_count'] * tournament_data['addon_chips']
     )
     logging.info(f"Chips recalculated: {tournament_data['chips_in_play']}")
@@ -118,6 +121,7 @@ def load_data():
                 # Установка значений по умолчанию для отсутствующих полей
                 defaults = {
                     'rebuys_count': 0,
+                    'double_rebuys_count': 0,
                     'addons_count': 0,
                     'rebuy_stack': 40000,
                     'paused': False,
@@ -129,6 +133,8 @@ def load_data():
                 for key, default_value in defaults.items():
                     if key not in data:
                         data[key] = default_value
+                if 'double_rebuy_stack' not in data:
+                    data['double_rebuy_stack'] = data['rebuy_stack'] * 2
                 
                 global tournament_data
                 tournament_data = data
@@ -280,9 +286,11 @@ def api_state():
         'next_level': next_level,
         'next_blinds': next_blinds,
         'rebuys_count': tournament_data['rebuys_count'],
+        'double_rebuys_count': tournament_data['double_rebuys_count'],
         'addons_count': tournament_data['addons_count'],
         'starting_stack': tournament_data['starting_stack'],
         'rebuy_stack': tournament_data['rebuy_stack'],
+        'double_rebuy_stack': tournament_data['double_rebuy_stack'],
         'addon_chips': tournament_data['addon_chips'],
         'finished': tournament_data['finished'],
         'next_start_time': tournament_data['next_start_time'].strftime('%Y-%m-%dT%H:%M:%S') if tournament_data['next_start_time'] else None,
@@ -295,7 +303,7 @@ def api_state():
     
     # Для обычных запросов отправляем только базовые данные
     return jsonify({k: v for k, v in response_data.items() if k not in 
-        ['rebuys_count', 'addons_count', 'starting_stack', 'rebuy_stack', 'addon_chips']})
+        ['rebuys_count', 'double_rebuys_count', 'addons_count', 'starting_stack', 'rebuy_stack', 'double_rebuy_stack', 'addon_chips']})
 
 # Admin login
 @app.route('/admin/login', methods=['GET', 'POST'])
@@ -364,6 +372,18 @@ def admin():
             if new_rebuys is not None and new_rebuys >= 0:
                 tournament_data['rebuys_count'] = new_rebuys
             recalculate_chips()
+        elif action == 'add_double_rebuy':
+            tournament_data['double_rebuys_count'] += 1
+            recalculate_chips()
+        elif action == 'remove_double_rebuy':
+            if tournament_data['double_rebuys_count'] > 0:
+                tournament_data['double_rebuys_count'] -= 1
+            recalculate_chips()
+        elif action == 'set_double_rebuys':
+            new_double_rebuys = request.form.get('double_rebuys', type=int)
+            if new_double_rebuys is not None and new_double_rebuys >= 0:
+                tournament_data['double_rebuys_count'] = new_double_rebuys
+            recalculate_chips()
         elif action == 'add_addon':
             tournament_data['addons_count'] += 1
             recalculate_chips()
@@ -385,6 +405,11 @@ def admin():
             new_stack = request.form.get('rebuy_stack', type=int)
             if new_stack is not None and new_stack >= 0:
                 tournament_data['rebuy_stack'] = new_stack
+                recalculate_chips()
+        elif action == 'set_double_rebuy_stack':
+            new_stack = request.form.get('double_rebuy_stack', type=int)
+            if new_stack is not None and new_stack >= 0:
+                tournament_data['double_rebuy_stack'] = new_stack
                 recalculate_chips()
         elif action == 'set_addon_chips':
             new_chips = request.form.get('addon_chips', type=int)
