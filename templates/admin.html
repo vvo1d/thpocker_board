@@ -3,180 +3,175 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a0a0a">
     <title>Админка</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
 </head>
 <body>
-    <h1>Админка</h1>
+<div class="admin">
+    <header class="admin-header">
+        <h1>Админка</h1>
+        <a href="/" target="_blank" class="header-link">Борд ↗</a>
+    </header>
 
     <!-- Мини-борд -->
-    <div class="mini-board">
-        <div class="board-row">
-            <div class="board-cell">
-                <div class="board-label">Уровень</div>
-                <div id="mini_level" class="board-value" style="display: block;">-</div>
-                <div id="mini_break" class="board-value" style="display: none; color: orange; font-weight: bold;">ПЕРЕРЫВ</div>
+    <section class="mini-board">
+        <div class="mini-main">
+            <div class="mini-level-line">
+                <span id="mini_level_wrap">Уровень <span id="mini_level">-</span></span>
+                <span id="mini_break" class="mini-break" style="display: none;">Перерыв</span>
             </div>
-            <div class="board-cell">
-                <div class="board-label">Блайнды</div>
-                <div id="mini_blinds" class="board-value">-</div>
+            <div id="mini_timer" class="mini-timer">00:00</div>
+            <div class="mini-blinds"><span id="mini_blinds">-</span></div>
+            <div class="mini-next">Далее: <span id="mini_next">-</span></div>
+        </div>
+        <div class="mini-stats">
+            <div class="stat">
+                <div class="stat-label">Игроков</div>
+                <div id="mini_players" class="stat-value">-</div>
             </div>
-            <div class="board-cell">
-                <div class="board-label">Время</div>
-                <div id="mini_timer" class="board-value">00:00</div>
+            <div class="stat">
+                <div class="stat-label">Фишек в игре</div>
+                <div id="mini_chips" class="stat-value">-</div>
             </div>
-            <div class="board-cell">
-                <div class="board-label">Следующие блайнды</div>
-                <div id="mini_next" class="board-value">-</div>
+            <div class="stat">
+                <div class="stat-label">Средний стек</div>
+                <div id="mini_avg_stack" class="stat-value">-</div>
             </div>
         </div>
-        <div class="board-row">
-            <div class="board-cell">
-                <div class="board-label">Игроков</div>
-                <div id="mini_players" class="board-value">-</div>
-            </div>
-            <div class="board-cell">
-                <div class="board-label">Фишек в игре</div>
-                <div id="mini_chips" class="board-value">-</div>
-            </div>
-            <div class="board-cell">
-                <div class="board-label">Средний стек</div>
-                <div id="mini_avg_stack" class="board-value">-</div>
-            </div>
-        </div>
-    </div>
+    </section>
 
-    
-    
     <div class="control-panel">
         <form method="post" class="ajax-form">
             <input type="hidden" name="action" value="prev_level">
-            <button type="submit">⬅️ Предыдущий уровень</button>
+            <button type="submit" class="btn btn-ghost">◀ <span class="btn-text">Пред. уровень</span></button>
         </form>
         <form method="post" class="ajax-form">
             <input type="hidden" name="action" value="pause">
-            <button type="submit" style="min-width: 200px;" id="pauseButton">
-                {{ '▶️ Возобновить' if data.paused else '⏸️ Пауза' }}
+            <button type="submit" class="btn btn-primary{{ ' is-paused' if data.paused else '' }}" id="pauseButton">
+                {{ '▶ Возобновить' if data.paused else '⏸ Пауза' }}
             </button>
         </form>
         <form method="post" class="ajax-form">
             <input type="hidden" name="action" value="next_level">
-            <button type="submit">Следующий уровень ➡️</button>
+            <button type="submit" class="btn btn-ghost"><span class="btn-text">След. уровень</span> ▶</button>
         </form>
     </div>
-    
+
     <h2>Игроки и фишки</h2>
     <div class="settings-section">
         <div class="setting-item">
-            <label for="players">Игроки:</label>
+            <label for="players">Игроки</label>
             <div class="input-group">
                 <form method="post" class="ajax-form">
+                    <input type="hidden" name="action" value="remove_player">
+                    <button type="submit" class="step-btn" aria-label="Убрать">−</button>
+                </form>
+                <form method="post" class="ajax-form">
                     <input type="hidden" name="action" value="set_players">
-                    <input type="number" min="0" id="players" name="players" value="{{ data.players }}">
+                    <input type="number" inputmode="numeric" min="0" id="players" name="players" value="{{ data.players }}">
                 </form>
                 <form method="post" class="ajax-form">
                     <input type="hidden" name="action" value="add_player">
-                    <button type="submit">+</button>
-                </form>
-                <form method="post" class="ajax-form">
-                    <input type="hidden" name="action" value="remove_player">
-                    <button type="submit">-</button>
+                    <button type="submit" class="step-btn" aria-label="Добавить">+</button>
                 </form>
             </div>
         </div>
-
         <div class="setting-item">
-            <label for="max_players">Макс. игроков:</label>
-            <form method="post" class="ajax-form">
-                <input type="hidden" name="action" value="set_max_players">
-                <input type="number" min="0" id="max_players" name="max_players" value="{{ data.max_players }}">
-            </form>
-        </div>
-        
-        <div class="setting-item">
-            <label for="rebuys">Ребаи:</label>
+            <label for="rebuys">Ребаи</label>
             <div class="input-group">
                 <form method="post" class="ajax-form">
+                    <input type="hidden" name="action" value="remove_rebuy">
+                    <button type="submit" class="step-btn" aria-label="Убрать">−</button>
+                </form>
+                <form method="post" class="ajax-form">
                     <input type="hidden" name="action" value="set_rebuys">
-                    <input type="number" min="0" id="rebuys" name="rebuys" value="{{ data.rebuys_count }}">
+                    <input type="number" inputmode="numeric" min="0" id="rebuys" name="rebuys" value="{{ data.rebuys_count }}">
                 </form>
                 <form method="post" class="ajax-form">
                     <input type="hidden" name="action" value="add_rebuy">
-                    <button type="submit">+</button>
-                </form>
-                <form method="post" class="ajax-form">
-                    <input type="hidden" name="action" value="remove_rebuy">
-                    <button type="submit">-</button>
+                    <button type="submit" class="step-btn" aria-label="Добавить">+</button>
                 </form>
             </div>
         </div>
         <div class="setting-item">
-            <label for="double_rebuys">Ребаи x2:</label>
+            <label for="double_rebuys">Ребаи x2</label>
             <div class="input-group">
                 <form method="post" class="ajax-form">
+                    <input type="hidden" name="action" value="remove_double_rebuy">
+                    <button type="submit" class="step-btn" aria-label="Убрать">−</button>
+                </form>
+                <form method="post" class="ajax-form">
                     <input type="hidden" name="action" value="set_double_rebuys">
-                    <input type="number" min="0" id="double_rebuys" name="double_rebuys" value="{{ data.double_rebuys_count }}">
+                    <input type="number" inputmode="numeric" min="0" id="double_rebuys" name="double_rebuys" value="{{ data.double_rebuys_count }}">
                 </form>
                 <form method="post" class="ajax-form">
                     <input type="hidden" name="action" value="add_double_rebuy">
-                    <button type="submit">+</button>
-                </form>
-                <form method="post" class="ajax-form">
-                    <input type="hidden" name="action" value="remove_double_rebuy">
-                    <button type="submit">-</button>
+                    <button type="submit" class="step-btn" aria-label="Добавить">+</button>
                 </form>
             </div>
         </div>
         <div class="setting-item">
-            <label for="addons">Аддоны:</label>
+            <label for="addons">Аддоны</label>
             <div class="input-group">
                 <form method="post" class="ajax-form">
+                    <input type="hidden" name="action" value="remove_addon">
+                    <button type="submit" class="step-btn" aria-label="Убрать">−</button>
+                </form>
+                <form method="post" class="ajax-form">
                     <input type="hidden" name="action" value="set_addons">
-                    <input type="number" min="0" id="addons" name="addons" value="{{ data.addons_count }}">
+                    <input type="number" inputmode="numeric" min="0" id="addons" name="addons" value="{{ data.addons_count }}">
                 </form>
                 <form method="post" class="ajax-form">
                     <input type="hidden" name="action" value="add_addon">
-                    <button type="submit">+</button>
-                </form>
-                <form method="post" class="ajax-form">
-                    <input type="hidden" name="action" value="remove_addon">
-                    <button type="submit">-</button>
+                    <button type="submit" class="step-btn" aria-label="Добавить">+</button>
                 </form>
             </div>
         </div>
         <div class="setting-item">
-            <label for="chips">Фишки в игре:</label>
+            <label for="max_players">Макс. игроков</label>
+            <form method="post" class="ajax-form">
+                <input type="hidden" name="action" value="set_max_players">
+                <input type="number" inputmode="numeric" min="0" id="max_players" name="max_players" value="{{ data.max_players }}">
+            </form>
+        </div>
+        <div class="setting-item">
+            <label for="chips">Фишки в игре</label>
             <form method="post" class="ajax-form">
                 <input type="hidden" name="action" value="set_chips">
-                <input type="number" min="0" id="chips" name="chips" value="{{ data.chips_in_play }}" class="number-input">
+                <input type="number" inputmode="numeric" min="0" id="chips" name="chips" value="{{ data.chips_in_play }}" class="number-input">
             </form>
         </div>
+    </div>
+
+    <h2>Стеки</h2>
+    <div class="settings-section">
         <div class="setting-item">
-            <label for="starting_stack">Стартовый стек:</label>
+            <label for="starting_stack">Стартовый стек</label>
             <form method="post" class="ajax-form">
                 <input type="hidden" name="action" value="set_starting_stack">
-                <input type="number" min="0" id="starting_stack" name="starting_stack" value="{{ data.starting_stack }}">
+                <input type="number" inputmode="numeric" min="0" id="starting_stack" name="starting_stack" value="{{ data.starting_stack }}">
             </form>
         </div>
         <div class="setting-item">
-            <label for="rebuy_stack">Ребай стек:</label>
+            <label for="rebuy_stack">Ребай стек</label>
             <form method="post" class="ajax-form">
                 <input type="hidden" name="action" value="set_rebuy_stack">
-                <input type="number" min="0" id="rebuy_stack" name="rebuy_stack" value="{{ data.rebuy_stack }}">
+                <input type="number" inputmode="numeric" min="0" id="rebuy_stack" name="rebuy_stack" value="{{ data.rebuy_stack }}">
             </form>
         </div>
         <div class="setting-item">
-            <label for="double_rebuy_stack">Ребай x2 стек:</label>
+            <label for="double_rebuy_stack">Ребай x2 стек</label>
             <form method="post" class="ajax-form">
                 <input type="hidden" name="action" value="set_double_rebuy_stack">
-                <input type="number" min="0" id="double_rebuy_stack" name="double_rebuy_stack" value="{{ data.double_rebuy_stack }}">
+                <input type="number" inputmode="numeric" min="0" id="double_rebuy_stack" name="double_rebuy_stack" value="{{ data.double_rebuy_stack }}">
             </form>
         </div>
         <div class="setting-item">
-            <label for="addon_chips">Аддон фишек:</label>
+            <label for="addon_chips">Аддон фишек</label>
             <form method="post" class="ajax-form">
                 <input type="hidden" name="action" value="set_addon_chips">
-                <input type="number" min="0" id="addon_chips" name="addon_chips" value="{{ data.addon_chips }}">
+                <input type="number" inputmode="numeric" min="0" id="addon_chips" name="addon_chips" value="{{ data.addon_chips }}">
             </form>
         </div>
     </div>
@@ -184,82 +179,97 @@
     <h2>Время</h2>
     <div class="settings-section time-settings">
         <!-- Форма корректировки времени -->
-        <form method="post" class="ajax-form timer-adjust-form" onsubmit="return confirmTimeAdjust()">
-            <input type="hidden" name="action" value="set_remaining_time">
-            <label>Корректировка времени текущего уровня:</label>
-            <div class="time-inputs">
-                <div class="time-input-group">
-                    <input type="number" name="minutes" id="timer_minutes" min="0" max="999" placeholder="мин" autocomplete="off">
-                    <span>:</span>
-                    <input type="number" name="seconds" id="timer_seconds" min="0" max="59" placeholder="сек" autocomplete="off">
+        <div class="setting-item">
+            <form method="post" class="ajax-form timer-adjust-form" onsubmit="return confirmTimeAdjust()">
+                <input type="hidden" name="action" value="set_remaining_time">
+                <label for="timer_minutes">Время текущего уровня</label>
+                <div class="inline-row">
+                    <div class="time-inputs">
+                        <input type="number" inputmode="numeric" name="minutes" id="timer_minutes" min="0" max="999" placeholder="мин" autocomplete="off">
+                        <span class="time-sep">:</span>
+                        <input type="number" inputmode="numeric" name="seconds" id="timer_seconds" min="0" max="59" placeholder="сек" autocomplete="off">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Установить</button>
                 </div>
-                <button type="submit">Установить время</button>
-            </div>
-        </form>
+            </form>
+        </div>
 
         <!-- Форма времени начала турнира -->
         <div class="setting-item">
             <form method="post" class="ajax-form start-time-form">
                 <input type="hidden" name="action" value="set_next_start">
-                <label for="next_start_time">Время начала турнира:</label>
-                <div class="time-input-group">
+                <label for="next_start_time">Время начала турнира</label>
+                <div class="inline-row">
                     <input type="datetime-local" id="next_start_time" name="next_start_time" value="{{ data.next_start_time.strftime('%Y-%m-%dT%H:%M') if data.next_start_time else '' }}">
-                    <button type="submit" onclick="return confirmStartTime()">Установить</button>
+                    <button type="submit" class="btn btn-primary" onclick="return confirmStartTime()">Установить</button>
                 </div>
             </form>
         </div>
     </div>
 
     <h2>Структура уровней</h2>
-    <form method="post" id="levels_form">
+    <form method="post" id="levels_form" class="levels-form">
         <input type="hidden" name="action" value="update_levels">
+        <div class="table-wrap">
         <table id="levels_table">
             <tr>
                 <th>№</th>
-                <th>Время</th>
-                <th>Малый блайнд</th>
-                <th>Большой блайнд</th>
+                <th>Мин</th>
+                <th>SB</th>
+                <th>BB</th>
                 <th>Перерыв</th>
-                <th>Действия</th>
+                <th></th>
             </tr>
             {% for level in data.levels %}
             <tr draggable="true" class="level-row">
                 <td class="row-number">{{ loop.index }}</td>
-                <td><input type="number" name="duration_{{ loop.index0 }}" value="{{ level.duration }}" required></td>
-                <td><input type="number" name="small_{{ loop.index0 }}" value="{{ level.small_blind if level.type == 'level' else '' }}" {{ 'disabled' if level.type == 'break' else '' }}></td>
-                <td><input type="number" name="big_{{ loop.index0 }}" value="{{ level.big_blind if level.type == 'level' else '' }}" {{ 'disabled' if level.type == 'break' else '' }}></td>
+                <td><input type="number" inputmode="numeric" name="duration_{{ loop.index0 }}" value="{{ level.duration }}" required></td>
+                <td><input type="number" inputmode="numeric" name="small_{{ loop.index0 }}" value="{{ level.small_blind if level.type == 'level' else '' }}" {{ 'disabled' if level.type == 'break' else '' }}></td>
+                <td><input type="number" inputmode="numeric" name="big_{{ loop.index0 }}" value="{{ level.big_blind if level.type == 'level' else '' }}" {{ 'disabled' if level.type == 'break' else '' }}></td>
                 <td><input type="checkbox" name="is_break_{{ loop.index0 }}" {{ 'checked' if level.type == 'break' else '' }} onclick="toggleBreak(this, {{ loop.index0 }})"></td>
                 <td>
                     <div class="row-actions">
                         <span class="drag-handle" title="Перетащить">⇕</span>
-                        <button type="button" onclick="deleteRow(this)" class="delete-btn" title="Удалить уровень">✖</button>
+                        <button type="button" onclick="deleteRow(this)" class="delete-btn" title="Удалить уровень">✕</button>
                     </div>
                 </td>
-                <div class="insert-indicator"></div>
             </tr>
             {% endfor %}
         </table>
-        <button type="button" onclick="addRow()">Добавить строку</button>
-        <button type="submit">Сохранить уровни</button>
+        </div>
+        <div class="levels-actions">
+            <button type="button" class="btn btn-ghost" onclick="addRow()">+ Добавить строку</button>
+            <button type="submit" class="btn btn-primary">Сохранить уровни</button>
+        </div>
     </form>
-    
+
     <h2>Импорт / Экспорт структуры</h2>
-    <div class="settings-section">
+    <div class="settings-section io-section">
         <div class="setting-item">
-            <button type="button" id="export_levels_btn">Скачать структуру</button>
+            <label>Экспорт</label>
+            <button type="button" class="btn btn-ghost btn-block" id="export_levels_btn">Скачать структуру</button>
         </div>
         <div class="setting-item">
-            <label for="import_levels_file">Загрузить:</label>
-            <input type="file" id="import_levels_file" accept=".json" style="margin-top: 5px;">
-            <button type="button" id="import_levels_btn" style="margin-top: 5px;">Применить</button>
-            <div id="import_status" style="margin-top: 5px; font-size: 0.9em; min-height: 20px;"></div>
+            <label for="import_levels_file">Импорт</label>
+            <div class="inline-row">
+                <input type="file" id="import_levels_file" accept=".json" class="visually-hidden">
+                <label class="file-picker" for="import_levels_file">
+                    <span class="file-picker-icon">⇪</span>
+                    <span class="file-picker-name" id="import_file_name">Выбрать .json файл</span>
+                </label>
+                <button type="button" class="btn btn-primary" id="import_levels_btn">Применить</button>
+            </div>
+            <div id="import_status"></div>
         </div>
     </div>
 
-    <form method="post" class="ajax-form" onsubmit="return confirm('Завершить турнир?');">
-        <input type="hidden" name="action" value="finish_tournament">
-        <button type="submit" style="background: #e74c3c; color: white;">Завершить турнир</button>
-    </form>
+    <div class="danger-zone">
+        <form method="post" class="ajax-form" onsubmit="return confirm('Завершить турнир?');">
+            <input type="hidden" name="action" value="finish_tournament">
+            <button type="submit" class="btn btn-danger">Завершить турнир</button>
+        </form>
+    </div>
+</div>
 
     <script>
         // Сохраняем позицию прокрутки перед отправкой формы
@@ -375,13 +385,10 @@
                 const miniLevelText = state.is_break ? '-' : state.level;
                 
                 if (miniLevel && miniBreak) {
-                    if (state.is_break) {
-                        miniLevel.style.display = 'none';
-                        miniBreak.style.display = 'block';
-                    } else {
-                        miniLevel.style.display = 'block';
-                        miniBreak.style.display = 'none';
-                    }
+                    const miniLevelWrap = document.getElementById('mini_level_wrap');
+                    miniLevelWrap.style.display = state.is_break ? 'none' : '';
+                    miniBreak.style.display = state.is_break ? '' : 'none';
+                    document.getElementById('mini_timer').classList.toggle('is-break', state.is_break);
                 }
 
                 const miniBoardMap = {
@@ -421,6 +428,10 @@
                 const pauseButton = document.querySelector('button[id="pauseButton"]');
                 if (pauseButton) {
                     pauseButton.textContent = state.paused ? '▶ Возобновить' : '⏸ Пауза';
+                    pauseButton.classList.toggle('is-paused', state.paused);
+                }
+                if (timerElement) {
+                    timerElement.classList.toggle('ending', !state.is_break && state.remaining <= 60);
                 }
 
                 // Если это перерыв и таймер не на паузе, ставим на паузу
@@ -533,6 +544,14 @@
     
     // Функции для импорта и экспорта структуры уровней
     function initLevelsImportExport() {
+        const importInput = document.getElementById('import_levels_file');
+        importInput.addEventListener('change', () => {
+            const file = importInput.files[0];
+            const picker = document.querySelector('.file-picker');
+            document.getElementById('import_file_name').textContent = file ? file.name : 'Выбрать .json файл';
+            picker.classList.toggle('has-file', !!file);
+        });
+
         document.getElementById('export_levels_btn').addEventListener('click', async () => {
             try {
                 const res = await fetch('/api/export_levels');
@@ -586,6 +605,7 @@
                 setTimeout(() => location.reload(), 800);
             } catch (err) {
                 statusEl.textContent = 'Ошибка: ' + err.message;
+                statusEl.className = 'error';
             }
         });
     }
@@ -602,17 +622,16 @@
             
             row.innerHTML = `
                 <td class="row-number">${rowCount + 1}</td>
-                <td><input type="number" name="duration_${rowCount}" value="15" required></td>
-                <td><input type="number" name="small_${rowCount}" value="100"></td>
-                <td><input type="number" name="big_${rowCount}" value="200"></td>
+                <td><input type="number" inputmode="numeric" name="duration_${rowCount}" value="15" required></td>
+                <td><input type="number" inputmode="numeric" name="small_${rowCount}" value="100"></td>
+                <td><input type="number" inputmode="numeric" name="big_${rowCount}" value="200"></td>
                 <td><input type="checkbox" name="is_break_${rowCount}" onclick="toggleBreak(this, ${rowCount})"></td>
                 <td>
                     <div class="row-actions">
                         <span class="drag-handle" title="Перетащить">⇕</span>
-                        <button type="button" onclick="deleteRow(this)" class="delete-btn" title="Удалить уровень">✖</button>
+                        <button type="button" onclick="deleteRow(this)" class="delete-btn" title="Удалить уровень">✕</button>
                     </div>
                 </td>
-                <div class="insert-indicator"></div>
             `;
 
             // Добавляем обработчики drag and drop для новой строки
